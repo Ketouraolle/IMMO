@@ -1,0 +1,61 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+
+class User extends Authenticatable
+{
+    use HasFactory, Notifiable;
+
+    protected $fillable = [
+        'name', 'email', 'password', 'phone', 'role', 'is_active',
+    ];
+
+    protected $hidden = [
+        'password', 'remember_token',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+            'is_active' => 'boolean',
+        ];
+    }
+
+    public function isAdmin(): bool { return $this->role === 'admin'; }
+    public function isOwner(): bool { return $this->role === 'owner'; }
+    public function isTenant(): bool { return $this->role === 'tenant'; }
+
+    // Properties this user owns (role = owner)
+    public function properties()
+    {
+        return $this->hasMany(Property::class, 'owner_id');
+    }
+
+    // Leases this user holds as a tenant
+    public function leases()
+    {
+        return $this->hasMany(Lease::class, 'tenant_id');
+    }
+
+    public function reportedIssues()
+    {
+        return $this->hasMany(Issue::class, 'reported_by');
+    }
+
+    public function assignedIssues()
+    {
+        return $this->hasMany(Issue::class, 'assigned_to');
+    }
+
+    public function handledVisitRequests()
+    {
+        return $this->hasMany(VisitRequest::class, 'handled_by');
+    }
+}
