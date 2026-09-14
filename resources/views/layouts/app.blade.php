@@ -53,6 +53,9 @@
             ],
         ],
     };
+    $nav[__('Account')] = [
+        [__('Security'), 'bi-shield-lock', 'security.show', ['security.*'], $user->mustUseTwoFactor() && ! $user->hasTwoFactorEnabled() ? '!' : null],
+    ];
     $initials = collect(explode(' ', $user->name))->filter()->take(2)->map(fn ($w) => mb_substr($w, 0, 1))->implode('');
 @endphp
 

@@ -9,6 +9,7 @@ return [
     'before' => 'Le champ :attribute doit être une date antérieure au :date.',
     'boolean' => 'Le champ :attribute doit être vrai ou faux.',
     'confirmed' => 'La confirmation du champ :attribute ne correspond pas.',
+    'current_password' => 'Le mot de passe est incorrect.',
     'date' => 'Le champ :attribute doit être une date valide.',
     'date_format' => 'Le champ :attribute doit correspondre au format :format.',
     'email' => 'Le champ :attribute doit être une adresse e-mail valide.',
@@ -80,5 +81,7 @@ return [
         'endTime' => 'heure de fin',
         'newImages' => 'photos',
         'newImages.*' => 'photo',
+        'code' => 'code',
+        'recovery_code' => 'code de secours',
     ],
 ];

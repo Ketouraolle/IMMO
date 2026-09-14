@@ -30,7 +30,7 @@ class VisitAvailabilityManagerTest extends TestCase
 
     public function test_admin_adds_a_date_and_duplicates_are_rejected(): void
     {
-        $admin = User::factory()->create(['role' => 'admin']);
+        $admin = User::factory()->twoFactorEnabled()->create(['role' => 'admin']);
         $property = $this->property();
         $date = today()->addDays(3)->toDateString();
 
@@ -50,7 +50,7 @@ class VisitAvailabilityManagerTest extends TestCase
 
     public function test_end_time_must_be_after_start_time(): void
     {
-        $admin = User::factory()->create(['role' => 'admin']);
+        $admin = User::factory()->twoFactorEnabled()->create(['role' => 'admin']);
 
         Livewire::actingAs($admin)
             ->test(VisitAvailabilityManager::class, ['property' => $this->property()])
@@ -62,7 +62,7 @@ class VisitAvailabilityManagerTest extends TestCase
 
     public function test_date_with_bookings_cannot_be_removed(): void
     {
-        $admin = User::factory()->create(['role' => 'admin']);
+        $admin = User::factory()->twoFactorEnabled()->create(['role' => 'admin']);
         $property = $this->property();
         $booked = $property->visitSlots()->create(['date' => today()->addDay()->toDateString(), 'start_time' => '09:00', 'end_time' => '12:00']);
         $empty = $property->visitSlots()->create(['date' => today()->addDays(2)->toDateString(), 'start_time' => '09:00', 'end_time' => '12:00']);

@@ -25,7 +25,7 @@ class AppPagesTest extends TestCase
     {
         parent::setUp();
 
-        $this->admin = User::factory()->create(['role' => 'admin']);
+        $this->admin = User::factory()->twoFactorEnabled()->create(['role' => 'admin']);
         $this->owner = User::factory()->create(['role' => 'owner']);
         $this->tenant = User::factory()->create(['role' => 'tenant']);
 

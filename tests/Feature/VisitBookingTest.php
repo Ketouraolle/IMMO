@@ -55,8 +55,8 @@ class VisitBookingTest extends TestCase
     public function test_pay_at_visit_creates_unpaid_request_and_notifies_admins(): void
     {
         Notification::fake();
-        $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
-        $inactiveAdmin = User::factory()->create(['role' => 'admin', 'is_active' => false]);
+        $admin = User::factory()->twoFactorEnabled()->create(['role' => 'admin', 'is_active' => true]);
+        $inactiveAdmin = User::factory()->twoFactorEnabled()->create(['role' => 'admin', 'is_active' => false]);
         [$property, $slot] = $this->propertyWithSlot();
 
         $this->bookingFor($property, $slot)
@@ -177,7 +177,7 @@ class VisitBookingTest extends TestCase
     public function test_visitor_picks_any_day_and_time_when_no_dates_are_published(): void
     {
         Notification::fake();
-        $admin = User::factory()->create(['role' => 'admin']);
+        $admin = User::factory()->twoFactorEnabled()->create(['role' => 'admin']);
         $property = $this->propertyWithoutSlots();
         $day = today()->addDays(4)->toDateString();
 

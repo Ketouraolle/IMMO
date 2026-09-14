@@ -16,7 +16,7 @@ class User extends Authenticatable
     ];
 
     protected $hidden = [
-        'password', 'remember_token',
+        'password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes',
     ];
 
     protected function casts(): array
@@ -25,6 +25,9 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'two_factor_secret' => 'encrypted',
+            'two_factor_recovery_codes' => 'array',
+            'two_factor_confirmed_at' => 'datetime',
         ];
     }
 
@@ -36,6 +39,27 @@ class User extends Authenticatable
     public static function activeAdmins()
     {
         return static::where('role', 'admin')->where('is_active', true);
+    }
+
+    public function hasTwoFactorEnabled(): bool
+    {
+        return $this->two_factor_secret !== null && $this->two_factor_confirmed_at !== null;
+    }
+
+    // Admins handle money, contracts and accounts, so a second factor is mandatory for them
+    public function mustUseTwoFactor(): bool
+    {
+        return $this->isAdmin();
+    }
+
+    public function clearTwoFactor(): void
+    {
+        $this->forceFill([
+            'two_factor_secret' => null,
+            'two_factor_recovery_codes' => null,
+            'two_factor_confirmed_at' => null,
+            'two_factor_last_used_step' => null,
+        ])->save();
     }
 
     // Properties this user owns (role = owner)

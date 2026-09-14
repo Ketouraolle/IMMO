@@ -30,13 +30,26 @@
                             @else
                                 <span class="badge-soft badge-soft--neutral">{{ __('Deactivated') }}</span>
                             @endif
+                            @if($u->hasTwoFactorEnabled())
+                                <span class="badge-soft badge-soft--info" title="{{ __('Two-factor authentication') }}"><i class="bi bi-shield-check"></i> 2FA</span>
+                            @endif
                         </td>
                         <td class="text-end">
                             @if($u->id !== auth()->id())
-                                <form method="POST" action="{{ route('users.toggle-active', $u) }}">
-                                    @csrf
-                                    <button class="btn btn-sm btn-outline-secondary">{{ $u->is_active ? __('Deactivate') : __('Reactivate') }}</button>
-                                </form>
+                                <div class="d-flex gap-1 justify-content-end">
+                                    @if($u->hasTwoFactorEnabled())
+                                        <form method="POST" action="{{ route('users.reset-two-factor', $u) }}"
+                                              data-confirm="{{ __('Reset two-factor authentication for :name? They will need to set it up again.', ['name' => $u->name]) }}"
+                                              onsubmit="return confirm(this.dataset.confirm);">
+                                            @csrf @method('DELETE')
+                                            <button class="btn btn-sm btn-outline-secondary text-nowrap">{{ __('Reset 2FA') }}</button>
+                                        </form>
+                                    @endif
+                                    <form method="POST" action="{{ route('users.toggle-active', $u) }}">
+                                        @csrf
+                                        <button class="btn btn-sm btn-outline-secondary">{{ $u->is_active ? __('Deactivate') : __('Reactivate') }}</button>
+                                    </form>
+                                </div>
                             @endif
                         </td>
                     </tr>

@@ -311,6 +311,20 @@
     .contract-doc .text-muted { color: #6b7280 !important; }
     .signature-img { max-height: 90px; max-width: 260px; }
 
+    /* Payment history */
+    .table-totals td { background: var(--surface-2); border-top: 2px solid var(--border-strong); }
+    .rent-status--due { box-shadow: inset 4px 0 0 #f59e0b, var(--shadow-card); }
+
+    /* Two-factor authentication */
+    .otp-input { font-size: 1.35rem; font-weight: 600; letter-spacing: .3em; font-variant-numeric: tabular-nums; }
+    .otp-input::placeholder { letter-spacing: .3em; opacity: .35; }
+    .qr-box { background: #fff; padding: .75rem; border-radius: .75rem; border: 1px solid var(--border-soft); line-height: 0; }
+    .qr-box svg { width: 176px; height: 176px; }
+    .setup-key { display: inline-block; font-size: .92rem; letter-spacing: .08em; padding: .35rem .6rem; background: var(--surface-2); color: var(--ink); border-radius: .4rem; word-break: break-all; }
+    .recovery-box { border: 1px dashed var(--border-strong); border-radius: .75rem; padding: 1rem 1.1rem; background: var(--surface-2); }
+    .recovery-codes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .4rem; }
+    .recovery-codes code { font-size: .9rem; color: var(--ink); background: var(--surface); padding: .3rem .5rem; border-radius: .35rem; text-align: center; }
+
     @media print {
         .app-sidebar, .app-topbar, .toast-stack, .d-print-none { display: none !important; }
         .app-main { margin-left: 0 !important; }

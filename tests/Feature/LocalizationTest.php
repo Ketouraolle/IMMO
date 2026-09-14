@@ -75,7 +75,7 @@ class LocalizationTest extends TestCase
 
     public function test_signed_in_pages_render_in_french_with_theme_toggle(): void
     {
-        $admin = User::factory()->create(['role' => 'admin', 'locale' => 'fr']);
+        $admin = User::factory()->twoFactorEnabled()->create(['role' => 'admin', 'locale' => 'fr']);
 
         $this->actingAs($admin)->get(route('dashboard'))
             ->assertOk()
@@ -87,7 +87,7 @@ class LocalizationTest extends TestCase
 
     public function test_contract_is_written_in_the_tenants_language(): void
     {
-        $admin = User::factory()->create(['role' => 'admin', 'locale' => 'en']);
+        $admin = User::factory()->twoFactorEnabled()->create(['role' => 'admin', 'locale' => 'en']);
         $tenant = User::factory()->create(['role' => 'tenant', 'locale' => 'fr']);
         $owner = User::factory()->create(['role' => 'owner']);
         $property = Property::create([
@@ -112,7 +112,7 @@ class LocalizationTest extends TestCase
     public function test_notifications_are_shown_in_the_readers_language(): void
     {
         $owner = User::factory()->create(['role' => 'owner']);
-        $admin = User::factory()->create(['role' => 'admin', 'locale' => 'fr']);
+        $admin = User::factory()->twoFactorEnabled()->create(['role' => 'admin', 'locale' => 'fr']);
         $property = Property::create([
             'owner_id' => $owner->id, 'name' => 'Villa Test', 'address' => '1 Rue Test', 'type' => 'house',
             'monthly_rent' => 150000, 'visit_fee' => 5000, 'status' => 'vacant',

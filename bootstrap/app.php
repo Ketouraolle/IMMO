@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureUserHasRole::class,
+            'two-factor.setup' => \App\Http\Middleware\EnsureTwoFactorIsSetUp::class,
         ]);
 
         // Runs after the session starts, so Livewire updates get the same language as full pages

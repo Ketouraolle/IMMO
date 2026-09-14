@@ -121,10 +121,11 @@ class DatabaseSeeder extends Seeder
         }
 
         // --- Leases ---
+        // Start dates line up with the seeded payments: Brice is paid up, Stephanie owes the current month
         $lease1 = Lease::create([
             'property_id' => $p1->id,
             'tenant_id' => $tenant1->id,
-            'start_date' => now()->subMonths(6),
+            'start_date' => now()->subMonths(2)->startOfMonth(),
             'rent_amount' => 250000,
             'billing_cycle' => 'monthly',
             'status' => 'active',
@@ -133,7 +134,7 @@ class DatabaseSeeder extends Seeder
         $lease2 = Lease::create([
             'property_id' => $p3->id,
             'tenant_id' => $tenant2->id,
-            'start_date' => now()->subMonths(3),
+            'start_date' => now()->subMonth()->startOfMonth(),
             'rent_amount' => 120000,
             'billing_cycle' => 'monthly',
             'status' => 'active',

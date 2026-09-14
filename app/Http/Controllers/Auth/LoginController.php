@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\Auth;
 
 class LoginController extends Controller
 {
+    // How long a password-verified login waits for its two-factor code
+    public const CHALLENGE_MINUTES = 5;
+
     public function create()
     {
         return view('auth.login');
@@ -20,17 +23,30 @@ class LoginController extends Controller
             'password' => ['required'],
         ]);
 
-        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
+        if (! Auth::validate($credentials)) {
             return back()->withErrors([
                 'email' => __('Those credentials do not match our records.'),
             ])->onlyInput('email');
         }
 
-        if (! $request->user()->is_active) {
-            Auth::logout();
-            return back()->withErrors(['email' => __('This account has been deactivated. Contact the office.')]);
+        $user = Auth::getLastAttempted();
+
+        if (! $user->is_active) {
+            return back()->withErrors(['email' => __('This account has been deactivated. Contact the office.')])->onlyInput('email');
         }
 
+        // Password is right; accounts with two-factor authentication still need a code before signing in
+        if ($user->hasTwoFactorEnabled()) {
+            $request->session()->put([
+                'login.id' => $user->id,
+                'login.remember' => $request->boolean('remember'),
+                'login.expires_at' => now()->addMinutes(self::CHALLENGE_MINUTES)->timestamp,
+            ]);
+
+            return redirect()->route('two-factor.challenge');
+        }
+
+        Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
         return redirect()->intended(route('dashboard'));

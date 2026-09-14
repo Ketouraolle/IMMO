@@ -33,7 +33,7 @@ class PropertyImageManagerTest extends TestCase
     public function test_admin_can_upload_images_and_first_becomes_primary(): void
     {
         Storage::fake('public');
-        $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
+        $admin = User::factory()->twoFactorEnabled()->create(['role' => 'admin', 'is_active' => true]);
         $property = $this->property();
 
         Livewire::actingAs($admin)
@@ -50,7 +50,7 @@ class PropertyImageManagerTest extends TestCase
     public function test_make_primary_and_remove_work(): void
     {
         Storage::fake('public');
-        $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
+        $admin = User::factory()->twoFactorEnabled()->create(['role' => 'admin', 'is_active' => true]);
         $property = $this->property();
 
         $component = Livewire::actingAs($admin)

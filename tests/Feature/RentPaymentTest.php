@@ -22,7 +22,7 @@ class RentPaymentTest extends TestCase
     {
         parent::setUp();
 
-        $this->admin = User::factory()->create(['role' => 'admin']);
+        $this->admin = User::factory()->twoFactorEnabled()->create(['role' => 'admin']);
         $this->tenant = User::factory()->create(['role' => 'tenant', 'phone' => '+237 6 77 11 22 33']);
         $owner = User::factory()->create(['role' => 'owner']);
 
