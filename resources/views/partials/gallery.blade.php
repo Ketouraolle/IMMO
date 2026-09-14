@@ -1,5 +1,5 @@
 @php
-    $emptyText = $emptyText ?? 'Photo coming soon';
+    $emptyText = $emptyText ?? __('Photo coming soon');
 @endphp
 @if($images->isNotEmpty())
     <div
@@ -28,7 +28,7 @@
                         src="{{ asset('storage/' . $img->path) }}"
                         class="rounded gallery-thumb progressive-img"
                         style="width:70px;height:70px;object-fit:cover;"
-                        alt="{{ $alt }} photo {{ $i + 1 }}"
+                        alt="{{ __(':name photo :number', ['name' => $alt, 'number' => $i + 1]) }}"
                         loading="lazy"
                         decoding="async"
                         onload="this.classList.add('is-loaded')"
@@ -47,13 +47,13 @@
             @keydown.window.arrow-left="index = (index - 1 + images.length) % images.length"
             @click.self="open = false"
         >
-            <button type="button" class="lightbox-close" @click="open = false">&times;</button>
+            <button type="button" class="lightbox-close" @click="open = false" aria-label="{{ __('Close') }}">&times;</button>
             @if($images->count() > 1)
-                <button type="button" class="lightbox-nav lightbox-nav--prev" @click="index = (index - 1 + images.length) % images.length">&larr;</button>
+                <button type="button" class="lightbox-nav lightbox-nav--prev" @click="index = (index - 1 + images.length) % images.length" aria-label="{{ __('Previous photo') }}">&larr;</button>
             @endif
             <img :src="images[index]" alt="{{ $alt }}">
             @if($images->count() > 1)
-                <button type="button" class="lightbox-nav lightbox-nav--next" @click="index = (index + 1) % images.length">&rarr;</button>
+                <button type="button" class="lightbox-nav lightbox-nav--next" @click="index = (index + 1) % images.length" aria-label="{{ __('Next photo') }}">&rarr;</button>
             @endif
         </div>
     </div>

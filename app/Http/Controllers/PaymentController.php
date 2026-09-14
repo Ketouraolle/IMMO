@@ -50,7 +50,7 @@ class PaymentController extends Controller
         $payment = $lease->payments()->create($data + ['status' => 'pending']);
         $payment->markApproved($request->user());
 
-        return redirect()->route('payments.receipt', $payment)->with('status', 'Payment recorded.');
+        return redirect()->route('payments.receipt', $payment)->with('status', __('Payment recorded.'));
     }
 
     // Tenant paying rent through the (simulated) Orange Money / MTN MoMo checkout.
@@ -60,7 +60,7 @@ class PaymentController extends Controller
         abort_unless($user->isTenant(), 403);
 
         $lease = $user->leases()->with('property')->where('status', 'active')->latest()->first();
-        abort_unless($lease, 404, "You don't have an active lease.");
+        abort_unless($lease, 404, __("You don't have an active lease."));
 
         return view('payments.submit', compact('lease'));
     }
@@ -71,7 +71,7 @@ class PaymentController extends Controller
         abort_unless($user->isTenant(), 403);
 
         $lease = $user->leases()->where('status', 'active')->latest()->first();
-        abort_unless($lease, 404, "You don't have an active lease.");
+        abort_unless($lease, 404, __("You don't have an active lease."));
 
         $data = $request->validate([
             'amount' => ['required', 'numeric', 'min:1'],
@@ -92,24 +92,24 @@ class PaymentController extends Controller
         ]);
         $payment->markApproved(null);
 
-        return redirect()->route('payments.receipt', $payment)->with('status', 'Payment confirmed — your receipt is ready.');
+        return redirect()->route('payments.receipt', $payment)->with('status', __('Payment confirmed — your receipt is ready.'));
     }
 
     // Admin validates a tenant-submitted payment: generates the receipt.
     public function approve(Request $request, Payment $payment)
     {
         abort_unless($request->user()->isAdmin(), 403);
-        abort_unless($payment->isPending(), 400, 'This payment has already been reviewed.');
+        abort_unless($payment->isPending(), 400, __('This payment has already been reviewed.'));
 
         $payment->markApproved($request->user());
 
-        return back()->with('status', 'Payment approved and receipt generated.');
+        return back()->with('status', __('Payment approved and receipt generated.'));
     }
 
     public function reject(Request $request, Payment $payment)
     {
         abort_unless($request->user()->isAdmin(), 403);
-        abort_unless($payment->isPending(), 400, 'This payment has already been reviewed.');
+        abort_unless($payment->isPending(), 400, __('This payment has already been reviewed.'));
 
         $data = $request->validate([
             'rejection_reason' => ['required', 'string', 'max:500'],
@@ -121,13 +121,13 @@ class PaymentController extends Controller
             'rejection_reason' => $data['rejection_reason'],
         ]);
 
-        return back()->with('status', 'Payment rejected.');
+        return back()->with('status', __('Payment rejected.'));
     }
 
     public function receipt(Request $request, Payment $payment)
     {
         $user = $request->user();
-        abort_unless($payment->isApproved(), 404, 'No receipt available for this payment yet.');
+        abort_unless($payment->isApproved(), 404, __('No receipt available for this payment yet.'));
 
         $payment->load('lease.property', 'lease.tenant', 'recordedBy');
 

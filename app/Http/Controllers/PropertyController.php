@@ -34,22 +34,9 @@ class PropertyController extends Controller
     {
         $this->authorizeStaff($request);
 
-        $data = $request->validate([
-            'owner_id' => ['required', 'exists:users,id'],
-            'name' => ['required', 'string', 'max:255'],
-            'address' => ['required', 'string', 'max:255'],
-            'city' => ['nullable', 'string', 'max:255'],
-            'type' => ['required', 'string', 'max:50'],
-            'monthly_rent' => ['required', 'numeric', 'min:0'],
-            'visit_fee' => ['required', 'numeric', 'min:0'],
-            'commission_rate' => ['required', 'numeric', 'min:0', 'max:100'],
-            'status' => ['required', 'in:vacant,occupied,maintenance'],
-            'notes' => ['nullable', 'string'],
-        ]);
+        $property = Property::create($request->validate($this->rules()));
 
-        $property = Property::create($data);
-
-        return redirect()->route('properties.show', $property)->with('status', 'Property added.');
+        return redirect()->route('properties.show', $property)->with('status', __('Property added.'));
     }
 
     public function show(Request $request, Property $property)
@@ -75,7 +62,23 @@ class PropertyController extends Controller
     {
         $this->authorizeStaff($request);
 
-        $data = $request->validate([
+        $property->update($request->validate($this->rules()));
+
+        return redirect()->route('properties.show', $property)->with('status', __('Property updated.'));
+    }
+
+    public function destroy(Request $request, Property $property)
+    {
+        $this->authorizeStaff($request);
+
+        $property->delete();
+
+        return redirect()->route('properties.index')->with('status', __('Property removed.'));
+    }
+
+    private function rules(): array
+    {
+        return [
             'owner_id' => ['required', 'exists:users,id'],
             'name' => ['required', 'string', 'max:255'],
             'address' => ['required', 'string', 'max:255'],
@@ -86,20 +89,7 @@ class PropertyController extends Controller
             'commission_rate' => ['required', 'numeric', 'min:0', 'max:100'],
             'status' => ['required', 'in:vacant,occupied,maintenance'],
             'notes' => ['nullable', 'string'],
-        ]);
-
-        $property->update($data);
-
-        return redirect()->route('properties.show', $property)->with('status', 'Property updated.');
-    }
-
-    public function destroy(Request $request, Property $property)
-    {
-        $this->authorizeStaff($request);
-
-        $property->delete();
-
-        return redirect()->route('properties.index')->with('status', 'Property removed.');
+        ];
     }
 
     private function authorizeStaff(Request $request): void

@@ -20,7 +20,7 @@ class ContractController extends Controller
 
         $lease->load('property.owner', 'tenant', 'contract');
         $contract = $lease->contract ?? $this->newContract($request, $lease);
-        abort_if($contract->isSigned(), 403, 'This contract has been signed and can no longer be edited.');
+        abort_if($contract->isSigned(), 403, __('This contract has been signed and can no longer be edited.'));
 
         $contract->setRelation('lease', $lease);
 
@@ -40,7 +40,7 @@ class ContractController extends Controller
         ]);
 
         $contract = $lease->contract ?? $this->newContract($request, $lease);
-        abort_if($contract->isSigned(), 403, 'This contract has been signed and can no longer be edited.');
+        abort_if($contract->isSigned(), 403, __('This contract has been signed and can no longer be edited.'));
 
         $contract->special_conditions = $data['special_conditions'] ?? null;
         $contract->save();
@@ -50,13 +50,13 @@ class ContractController extends Controller
             return $this->send($request, $contract);
         }
 
-        return redirect()->route('contracts.create', $lease)->with('status', 'Draft saved.');
+        return redirect()->route('contracts.create', $lease)->with('status', __('Draft saved.'));
     }
 
     public function send(Request $request, Contract $contract)
     {
         abort_unless($request->user()->isAdmin(), 403);
-        abort_if($contract->isSigned(), 403, 'This contract has already been signed.');
+        abort_if($contract->isSigned(), 403, __('This contract has already been signed.'));
 
         $body = $contract->render();
 
@@ -70,7 +70,7 @@ class ContractController extends Controller
         $tenant = $contract->lease->tenant;
         $tenant->notify(new ContractReadyToSign($contract));
 
-        return redirect()->route('contracts.show', $contract)->with('status', "Contract sent to {$tenant->name} for signature.");
+        return redirect()->route('contracts.show', $contract)->with('status', __('Contract sent to :name for signature.', ['name' => $tenant->name]));
     }
 
     public function show(Request $request, Contract $contract)
@@ -88,23 +88,23 @@ class ContractController extends Controller
     {
         $user = $request->user();
         abort_unless($user->isTenant() && $contract->lease->tenant_id === $user->id, 403);
-        abort_unless($contract->isSent(), 400, 'This contract is not awaiting a signature.');
+        abort_unless($contract->isSent(), 400, __('This contract is not awaiting a signature.'));
 
         $request->validate([
             'agree' => ['accepted'],
             'signature' => ['required', 'string', 'starts_with:data:image/png;base64,', 'max:400000'],
         ], [
-            'agree.accepted' => 'Please confirm you have read and agree to the contract.',
-            'signature.required' => 'Please draw your signature.',
+            'agree.accepted' => __('Please confirm you have read and agree to the contract.'),
+            'signature.required' => __('Please draw your signature.'),
         ]);
 
         $png = base64_decode(substr($request->input('signature'), strlen('data:image/png;base64,')), true);
         if ($png === false || ! str_starts_with($png, "\x89PNG")) {
-            throw ValidationException::withMessages(['signature' => 'Your signature could not be read. Please draw it again.']);
+            throw ValidationException::withMessages(['signature' => __('Your signature could not be read. Please draw it again.')]);
         }
 
         // The document must be exactly the one that was sent
-        abort_unless(hash_equals((string) $contract->body_hash, hash('sha256', (string) $contract->body)), 409, 'This contract changed after it was sent. Please contact the office.');
+        abort_unless(hash_equals((string) $contract->body_hash, hash('sha256', (string) $contract->body)), 409, __('This contract changed after it was sent. Please contact the office.'));
 
         $contract->update([
             'status' => 'signed',
@@ -116,7 +116,7 @@ class ContractController extends Controller
 
         Notification::send(User::activeAdmins()->get(), new ContractSigned($contract));
 
-        return redirect()->route('contracts.show', $contract)->with('status', 'Contract signed. You can come back to it anytime.');
+        return redirect()->route('contracts.show', $contract)->with('status', __('Contract signed. You can come back to it anytime.'));
     }
 
     // Tenant shortcut from the sidebar

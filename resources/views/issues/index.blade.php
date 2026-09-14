@@ -1,35 +1,37 @@
 @extends('layouts.app')
-@section('title', 'Issues')
+@section('title', __('Issues'))
 @section('content')
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="mb-0">Issues</h3>
-        @if(!auth()->user()->isAdmin())
-        <a href="{{ route('issues.create') }}" class="btn btn-dark btn-sm">+ Report issue</a>
+    @php $priorityTone = ['low' => 'neutral', 'medium' => 'info', 'high' => 'warning', 'urgent' => 'danger']; @endphp
+
+    <div class="page-head">
+        <div><h3>{{ __('Issues') }}</h3></div>
+        @if(! auth()->user()->isAdmin())
+            <a href="{{ route('issues.create') }}" class="btn btn-dark btn-sm"><i class="bi bi-plus-lg"></i> {{ __('Report issue') }}</a>
         @endif
     </div>
 
-    <div class="mb-3 btn-group">
-        <a href="{{ route('issues.index') }}" class="btn btn-sm btn-outline-secondary {{ request('status') ? '' : 'active' }}">All</a>
-        @foreach(['open'=>'Open','in_progress'=>'In progress','resolved'=>'Resolved','closed'=>'Closed'] as $val=>$label)
-            <a href="{{ route('issues.index', ['status'=>$val]) }}" class="btn btn-sm btn-outline-secondary {{ request('status')==$val ? 'active' : '' }}">{{ $label }}</a>
+    <div class="pill-nav mb-3">
+        <a href="{{ route('issues.index') }}" class="{{ request('status') ? '' : 'active' }}">{{ __('All') }}</a>
+        @foreach(['open' => __('Open'), 'in_progress' => __('In progress'), 'resolved' => __('Resolved'), 'closed' => __('Closed')] as $value => $label)
+            <a href="{{ route('issues.index', ['status' => $value]) }}" class="{{ request('status') === $value ? 'active' : '' }}">{{ $label }}</a>
         @endforeach
     </div>
 
     <div class="card">
         <div class="table-responsive">
             <table class="table mb-0 align-middle">
-                <thead><tr><th>Title</th><th>Property</th><th>Reported by</th><th>Priority</th><th>Status</th></tr></thead>
+                <thead><tr><th>{{ __('Title') }}</th><th>{{ __('Property') }}</th><th>{{ __('Reported by') }}</th><th>{{ __('Priority') }}</th><th>{{ __('Status') }}</th></tr></thead>
                 <tbody>
                 @forelse($issues as $i)
                     <tr>
                         <td><a href="{{ route('issues.show', $i) }}">{{ $i->title }}</a></td>
                         <td>{{ $i->property->name }}</td>
                         <td>{{ $i->reportedBy->name }}</td>
-                        <td>{{ ucfirst($i->priority) }}</td>
-                        <td><span class="badge bg-secondary">{{ ucfirst(str_replace('_',' ',$i->status)) }}</span></td>
+                        <td><span class="badge-soft badge-soft--{{ $priorityTone[$i->priority] ?? 'neutral' }}">{{ __(ucfirst($i->priority)) }}</span></td>
+                        <td><span class="badge-soft badge-soft--neutral">{{ __(ucfirst(str_replace('_', ' ', $i->status))) }}</span></td>
                     </tr>
                 @empty
-                    <tr><td colspan="5" class="text-muted text-center py-4">No issues found</td></tr>
+                    <tr><td colspan="5" class="text-muted text-center py-5">{{ __('No issues found') }}</td></tr>
                 @endforelse
                 </tbody>
             </table>

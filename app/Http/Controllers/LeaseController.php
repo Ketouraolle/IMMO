@@ -39,7 +39,7 @@ class LeaseController extends Controller
         $property->update(['status' => 'occupied']);
 
         // Next step: prepare the contract the tenant will sign
-        return redirect()->route('contracts.create', $lease)->with('status', 'Tenant assigned. Review and send their contract.');
+        return redirect()->route('contracts.create', $lease)->with('status', __('Tenant assigned. Review and send their contract.'));
     }
 
     public function end(Request $request, Lease $lease)
@@ -49,6 +49,6 @@ class LeaseController extends Controller
         $lease->update(['status' => 'ended', 'end_date' => now()]);
         $lease->property->update(['status' => 'vacant']);
 
-        return redirect()->route('properties.show', $lease->property)->with('status', 'Lease ended, property marked vacant.');
+        return redirect()->route('properties.show', $lease->property)->with('status', __('Lease ended, property marked vacant.'));
     }
 }

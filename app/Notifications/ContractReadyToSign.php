@@ -21,7 +21,8 @@ class ContractReadyToSign extends Notification
         return [
             'icon' => 'bi-pen',
             'title' => 'Your contract is ready to sign',
-            'body' => "Please read and sign the lease contract for {$property->name}.",
+            'body' => 'Please read and sign the lease contract for :property.',
+            'params' => ['property' => $property->name],
             'url' => route('contracts.show', $this->contract),
         ];
     }

@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'EstateHub') · EstateHub</title>
+    @include('partials.theme-init')
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -17,49 +18,49 @@
     $user = auth()->user();
     $nav = match (true) {
         $user->isAdmin() => [
-            'Overview' => [
-                ['Dashboard', 'bi-grid-1x2', 'dashboard', ['dashboard'], null],
-                ['Properties', 'bi-buildings', 'properties.index', ['properties.*', 'leases.*', 'contracts.*'], null],
-                ['Visit requests', 'bi-calendar2-week', 'visit-requests.index', ['visit-requests.*'], $navCounts['visits'] ?? 0],
+            __('Overview') => [
+                [__('Dashboard'), 'bi-grid-1x2', 'dashboard', ['dashboard'], null],
+                [__('Properties'), 'bi-buildings', 'properties.index', ['properties.*', 'leases.*', 'contracts.*'], null],
+                [__('Visit requests'), 'bi-calendar2-week', 'visit-requests.index', ['visit-requests.*'], $navCounts['visits'] ?? 0],
             ],
-            'Finance' => [
-                ['Payments', 'bi-wallet2', 'payments.index', ['payments.*'], $navCounts['payments'] ?? 0],
+            __('Finance') => [
+                [__('Payments'), 'bi-wallet2', 'payments.index', ['payments.*'], $navCounts['payments'] ?? 0],
             ],
-            'Operations' => [
-                ['Issues', 'bi-tools', 'issues.index', ['issues.*'], null],
-                ['Users', 'bi-people', 'users.index', ['users.*'], null],
+            __('Operations') => [
+                [__('Issues'), 'bi-tools', 'issues.index', ['issues.*'], null],
+                [__('Users'), 'bi-people', 'users.index', ['users.*'], null],
             ],
         ],
         $user->isOwner() => [
-            'Overview' => [
-                ['Dashboard', 'bi-grid-1x2', 'dashboard', ['dashboard'], null],
-                ['My properties', 'bi-buildings', 'properties.index', ['properties.*', 'contracts.*'], null],
-                ['Payments', 'bi-wallet2', 'payments.index', ['payments.*'], null],
-                ['Issues', 'bi-tools', 'issues.index', ['issues.*'], null],
+            __('Overview') => [
+                [__('Dashboard'), 'bi-grid-1x2', 'dashboard', ['dashboard'], null],
+                [__('My properties'), 'bi-buildings', 'properties.index', ['properties.*', 'contracts.*'], null],
+                [__('Payments'), 'bi-wallet2', 'payments.index', ['payments.*'], null],
+                [__('Issues'), 'bi-tools', 'issues.index', ['issues.*'], null],
             ],
         ],
         default => [
-            'My home' => [
-                ['Dashboard', 'bi-grid-1x2', 'dashboard', ['dashboard'], null],
-                ['My contract', 'bi-file-earmark-text', 'contracts.mine', ['contracts.*'], $navCounts['contract'] ?? 0],
+            __('My home') => [
+                [__('Dashboard'), 'bi-grid-1x2', 'dashboard', ['dashboard'], null],
+                [__('My contract'), 'bi-file-earmark-text', 'contracts.mine', ['contracts.*'], $navCounts['contract'] ?? 0],
             ],
-            'Payments' => [
-                ['Pay rent', 'bi-phone', 'payments.submit-form', ['payments.submit-form'], null],
-                ['Payment history', 'bi-receipt', 'payments.index', ['payments.index', 'payments.receipt'], null],
+            __('Payments') => [
+                [__('Pay rent'), 'bi-phone', 'payments.submit-form', ['payments.submit-form'], null],
+                [__('Payment history'), 'bi-receipt', 'payments.index', ['payments.index', 'payments.receipt'], null],
             ],
-            'Support' => [
-                ['Issues', 'bi-tools', 'issues.index', ['issues.*'], null],
+            __('Support') => [
+                [__('Issues'), 'bi-tools', 'issues.index', ['issues.*'], null],
             ],
         ],
     };
     $initials = collect(explode(' ', $user->name))->filter()->take(2)->map(fn ($w) => mb_substr($w, 0, 1))->implode('');
 @endphp
 
-<aside class="offcanvas-lg offcanvas-start app-sidebar" tabindex="-1" id="appSidebar" aria-label="Main navigation">
+<aside class="offcanvas-lg offcanvas-start app-sidebar" tabindex="-1" id="appSidebar" aria-label="{{ __('Main navigation') }}">
     <div class="app-sidebar__inner">
         <div class="d-flex align-items-center justify-content-between pe-3">
             <a class="app-brand" href="{{ route('dashboard') }}"><span class="app-brand__mark"><i class="bi bi-house-door-fill"></i></span> EstateHub</a>
-            <button type="button" class="btn-close btn-close-white d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#appSidebar" aria-label="Close"></button>
+            <button type="button" class="btn-close btn-close-white d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#appSidebar" aria-label="{{ __('Close') }}"></button>
         </div>
 
         <nav class="app-nav">
@@ -78,11 +79,11 @@
             <span class="app-user__avatar">{{ strtoupper($initials) }}</span>
             <div class="min-w-0">
                 <div class="app-user__name">{{ $user->name }}</div>
-                <div class="app-user__role">{{ ucfirst($user->role) }}</div>
+                <div class="app-user__role">{{ __(ucfirst($user->role)) }}</div>
             </div>
             <form method="POST" action="{{ route('logout') }}" class="ms-auto">
                 @csrf
-                <button class="app-user__logout" title="Log out" aria-label="Log out"><i class="bi bi-box-arrow-right"></i></button>
+                <button class="app-user__logout" title="{{ __('Log out') }}" aria-label="{{ __('Log out') }}"><i class="bi bi-box-arrow-right"></i></button>
             </form>
         </div>
     </div>
@@ -90,11 +91,13 @@
 
 <div class="app-main">
     <header class="app-topbar">
-        <button class="icon-btn d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#appSidebar" aria-controls="appSidebar" aria-label="Open menu">
+        <button class="icon-btn d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#appSidebar" aria-controls="appSidebar" aria-label="{{ __('Open menu') }}">
             <i class="bi bi-list"></i>
         </button>
-        <span class="app-topbar__date d-none d-sm-inline">{{ now()->format('l, d F Y') }}</span>
-        <div class="ms-auto">
+        <span class="app-topbar__date d-none d-sm-inline">{{ ucfirst(now()->translatedFormat('l j F Y')) }}</span>
+        <div class="ms-auto d-flex align-items-center gap-2">
+            @include('partials.locale-switch')
+            @include('partials.theme-toggle')
             <livewire:notification-bell />
         </div>
     </header>
@@ -107,7 +110,7 @@
                         <li>{{ $error }}</li>
                     @endforeach
                 </ul>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ __('Close') }}"></button>
             </div>
         @endif
 

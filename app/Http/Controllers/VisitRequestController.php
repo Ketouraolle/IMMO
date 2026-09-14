@@ -45,14 +45,19 @@ class VisitRequestController extends Controller
 
         $visitRequest->update($data);
 
-        return back()->with('status', 'Visit marked as '.strtolower(VisitRequest::STATUSES[$data['status']]).'.');
+        return back()->with('status', match ($data['status']) {
+            'confirmed' => __('Visit confirmed.'),
+            'completed' => __('Visit marked as completed.'),
+            'cancelled' => __('Visit cancelled.'),
+            default => __('Visit request updated.'),
+        });
     }
 
     // Fee paid at the visit: cash is recorded as-is, mobile money goes through the simulated operator.
     public function collectFee(Request $request, VisitRequest $visitRequest, MobileMoneySimulator $simulator)
     {
         abort_unless($request->user()->isAdmin(), 403);
-        abort_unless($visitRequest->needsPayment(), 400, 'There is no fee to collect on this visit.');
+        abort_unless($visitRequest->needsPayment(), 400, __('There is no fee to collect on this visit.'));
 
         $data = $request->validate([
             'method' => ['required', Rule::in(['cash', ...array_keys(MobileMoneySimulator::OPERATORS)])],
@@ -69,6 +74,6 @@ class VisitRequestController extends Controller
             'handled_by' => $request->user()->id,
         ]);
 
-        return back()->with('status', 'Visit fee of '.number_format($visitRequest->fee_amount).' XAF collected.');
+        return back()->with('status', __('Visit fee of :amount XAF collected.', ['amount' => number_format($visitRequest->fee_amount)]));
     }
 }

@@ -30,12 +30,12 @@ class VisitAvailabilityManager extends Component
             'startTime' => ['required', 'date_format:H:i'],
             'endTime' => ['required', 'date_format:H:i', 'after:startTime'],
         ], [
-            'date.after_or_equal' => 'Pick today or a future date.',
-            'endTime.after' => 'End time must be after the start time.',
+            'date.after_or_equal' => __('Pick today or a future date.'),
+            'endTime.after' => __('End time must be after the start time.'),
         ]);
 
         if ($this->property->visitSlots()->whereDate('date', $this->date)->exists()) {
-            $this->addError('date', 'This date is already open for visits.');
+            $this->addError('date', __('This date is already open for visits.'));
             return;
         }
 
@@ -47,7 +47,7 @@ class VisitAvailabilityManager extends Component
 
         // Pre-fill the next day so opening a run of dates is quick
         $this->date = Carbon::parse($this->date)->addDay()->toDateString();
-        $this->dispatch('status', message: 'Visit date added.');
+        $this->dispatch('status', message: __('Visit date added.'));
     }
 
     public function toggle(int $slotId): void
@@ -65,12 +65,12 @@ class VisitAvailabilityManager extends Component
         $slot = $this->property->visitSlots()->findOrFail($slotId);
 
         if ($slot->visitRequests()->where('status', '!=', 'cancelled')->exists()) {
-            $this->addError('slots', 'That date has bookings. Cancel them first, or pause the date instead.');
+            $this->addError('slots', __('That date has bookings. Cancel them first, or pause the date instead.'));
             return;
         }
 
         $slot->delete();
-        $this->dispatch('status', message: 'Visit date removed.');
+        $this->dispatch('status', message: __('Visit date removed.'));
     }
 
     private function ensureAdmin(): void

@@ -54,7 +54,7 @@ class Payment extends Model
 
     public function methodLabel(): string
     {
-        return self::METHODS[$this->method] ?? ucfirst(str_replace('_', ' ', $this->method));
+        return __(self::METHODS[$this->method] ?? ucfirst(str_replace('_', ' ', $this->method)));
     }
 
     public function netAmount(): float

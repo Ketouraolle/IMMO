@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Locale;
 use Illuminate\Database\Eloquent\Model;
 
 class Contract extends Model
@@ -39,7 +40,7 @@ class Contract extends Model
 
     public function statusLabel(): string
     {
-        return self::STATUS_LABELS[$this->status] ?? ucfirst($this->status);
+        return __(self::STATUS_LABELS[$this->status] ?? ucfirst($this->status));
     }
 
     public static function generateReference(Lease $lease): string
@@ -47,11 +48,22 @@ class Contract extends Model
         return 'CTR-'.now()->format('Ym').'-'.str_pad($lease->id, 5, '0', STR_PAD_LEFT);
     }
 
+    /** The contract is written in the tenant's language (their saved preference, else the app default). */
+    public function documentLocale(): string
+    {
+        $this->loadMissing('lease.tenant');
+
+        return $this->lease->tenant->locale ?? config('app.locale');
+    }
+
     /** Render the contract document from the current lease data. */
     public function render(): string
     {
         $this->loadMissing('lease.property.owner', 'lease.tenant', 'creator');
 
-        return view('contracts.template', ['contract' => $this, 'lease' => $this->lease])->render();
+        return Locale::using($this->documentLocale(), fn () => view('contracts.template', [
+            'contract' => $this,
+            'lease' => $this->lease,
+        ])->render());
     }
 }

@@ -1,4 +1,11 @@
 <script>
+    window.i18n = @js([
+        'close' => __('Close'),
+        'chooseOperator' => __('Choose Orange Money or MTN MoMo.'),
+        'invalidPhone' => __('Enter a valid Cameroon mobile number, e.g. 677 11 22 33.'),
+        'approvePrompt' => __('Approve the :operator prompt sent to :phone'),
+    ]);
+
     // Toasts: flash messages and Livewire `status` events
     window.showToast = function (message) {
         const stack = document.getElementById('toast-stack');
@@ -7,7 +14,8 @@
         el.className = 'toast align-items-center border-0 app-toast';
         el.setAttribute('role', 'status');
         el.innerHTML = '<div class="d-flex"><div class="toast-body"><i class="bi bi-check-circle-fill me-2"></i></div>' +
-            '<button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div>';
+            '<button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button></div>';
+        el.querySelector('.btn-close').setAttribute('aria-label', window.i18n.close);
         el.querySelector('.toast-body').append(document.createTextNode(message));
         stack.append(el);
         el.addEventListener('hidden.bs.toast', () => el.remove());
@@ -44,13 +52,16 @@
             get buttonLabel() {
                 return this.amount > 0 ? `${cfg.label} ${new Intl.NumberFormat('en-US').format(this.amount)} XAF` : cfg.label;
             },
+            get promptText() {
+                return window.i18n.approvePrompt.replace(':operator', this.operator).replace(':phone', this.maskedPhone);
+            },
             digits() { return (this.phone || '').replace(/\D/g, '').replace(/^237/, ''); },
             get maskedPhone() { const d = this.digits(); return d.slice(0, 1) + '•• •• •• ' + d.slice(-2); },
 
             async start() {
                 this.error = '';
-                if (!this.method) { this.error = 'Choose Orange Money or MTN MoMo.'; return; }
-                if (!/^6\d{8}$/.test(this.digits())) { this.error = 'Enter a valid Cameroon mobile number, e.g. 677 11 22 33.'; return; }
+                if (!this.method) { this.error = window.i18n.chooseOperator; return; }
+                if (!/^6\d{8}$/.test(this.digits())) { this.error = window.i18n.invalidPhone; return; }
 
                 const form = this.$root.closest('form');
                 if (cfg.mode === 'form') {

@@ -21,7 +21,8 @@ class ContractSigned extends Notification
         return [
             'icon' => 'bi-patch-check',
             'title' => 'Contract signed',
-            'body' => "{$lease->tenant->name} signed the contract for {$lease->property->name}.",
+            'body' => ':tenant signed the contract for :property.',
+            'params' => ['tenant' => $lease->tenant->name, 'property' => $lease->property->name],
             'url' => route('contracts.show', $this->contract),
         ];
     }

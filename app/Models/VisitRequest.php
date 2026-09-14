@@ -45,9 +45,14 @@ class VisitRequest extends Model
 
     public function needsPayment(): bool { return $this->payment_status === 'unpaid' && $this->fee_amount > 0; }
 
+    public function statusLabel(): string
+    {
+        return __(self::STATUSES[$this->status] ?? ucfirst($this->status));
+    }
+
     public function paymentMethodLabel(): ?string
     {
-        return $this->payment_method ? (Payment::METHODS[$this->payment_method] ?? ucfirst($this->payment_method)) : null;
+        return $this->payment_method ? __(Payment::METHODS[$this->payment_method] ?? ucfirst($this->payment_method)) : null;
     }
 
     public function visitTimeLabel(): ?string

@@ -5,6 +5,7 @@ use App\Http\Controllers\ContractController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\IssueController;
 use App\Http\Controllers\LeaseController;
+use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\PublicPropertyController;
@@ -16,6 +17,9 @@ use Illuminate\Support\Facades\Route;
 // Visit booking happens inside the VisitBooking Livewire component on the listing page.
 Route::get('/', [PublicPropertyController::class, 'index'])->name('public.properties.index');
 Route::get('/browse/{property}', [PublicPropertyController::class, 'show'])->name('public.properties.show');
+
+// --- Language switch (everyone) ---
+Route::get('/locale/{locale}', LocaleController::class)->whereIn('locale', ['en', 'fr'])->name('locale.switch');
 
 // --- Guest / auth ---
 Route::middleware('guest')->group(function () {

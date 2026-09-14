@@ -42,16 +42,16 @@ class UserController extends Controller
 
         User::create($data);
 
-        return redirect()->route('users.index')->with('status', 'Account created.');
+        return redirect()->route('users.index')->with('status', __('Account created.'));
     }
 
     public function toggleActive(Request $request, User $user)
     {
         abort_unless($request->user()->isAdmin(), 403);
-        abort_if($user->id === $request->user()->id, 403, "You can't deactivate your own account.");
+        abort_if($user->id === $request->user()->id, 403, __("You can't deactivate your own account."));
 
         $user->update(['is_active' => ! $user->is_active]);
 
-        return back()->with('status', $user->is_active ? 'Account reactivated.' : 'Account deactivated.');
+        return back()->with('status', $user->is_active ? __('Account reactivated.') : __('Account deactivated.'));
     }
 }

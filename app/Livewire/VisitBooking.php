@@ -78,7 +78,7 @@ class VisitBooking extends Component
     {
         $limiterKey = 'visit-booking:'.request()->ip();
         if (RateLimiter::tooManyAttempts($limiterKey, 5)) {
-            $this->addError('form', 'Too many booking attempts. Please wait a minute and try again.');
+            $this->addError('form', __('Too many booking attempts. Please wait a minute and try again.'));
             return;
         }
 
@@ -132,10 +132,14 @@ class VisitBooking extends Component
     protected function validationAttributes(): array
     {
         return [
-            'payMethod' => 'operator',
-            'payPhone' => 'mobile money number',
-            'paymentOption' => 'payment option',
-            'date' => 'day',
+            'name' => __('full name'),
+            'email' => __('email'),
+            'phone' => __('phone'),
+            'payMethod' => __('operator'),
+            'payPhone' => __('mobile money number'),
+            'paymentOption' => __('payment option'),
+            'date' => __('day'),
+            'time' => __('time'),
         ];
     }
 
@@ -143,14 +147,14 @@ class VisitBooking extends Component
     {
         $slot = $this->slot();
         if (! $slot) {
-            $this->addError('slotId', 'Pick one of the available dates.');
+            $this->addError('slotId', __('Pick one of the available dates.'));
             return false;
         }
 
         if (! in_array($this->time, $slot->timeOptions(), true)
             || in_array($this->time, $slot->bookedTimes(), true)
             || $slot->isTimeInPast($this->time)) {
-            $this->addError('time', 'That time is no longer available. Please pick another.');
+            $this->addError('time', __('That time is no longer available. Please pick another.'));
             return false;
         }
 
@@ -163,13 +167,13 @@ class VisitBooking extends Component
             'date' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
             'time' => ['required', 'date_format:H:i'],
         ], [
-            'date.required' => 'Pick a day for your visit.',
-            'date.after_or_equal' => 'Pick today or a later day.',
-            'time.required' => 'Pick a time for your visit.',
+            'date.required' => __('Pick a day for your visit.'),
+            'date.after_or_equal' => __('Pick today or a later day.'),
+            'time.required' => __('Pick a time for your visit.'),
         ]);
 
         if (Carbon::parse("{$this->date} {$this->time}")->isPast()) {
-            $this->addError('time', 'That time has already passed. Please pick a later time.');
+            $this->addError('time', __('That time has already passed. Please pick a later time.'));
             return false;
         }
 
@@ -180,7 +184,7 @@ class VisitBooking extends Component
             ->exists();
 
         if ($taken) {
-            $this->addError('time', 'Someone already booked that time. Please pick another.');
+            $this->addError('time', __('Someone already booked that time. Please pick another.'));
             return false;
         }
 

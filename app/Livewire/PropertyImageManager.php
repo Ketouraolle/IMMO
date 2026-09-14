@@ -64,7 +64,7 @@ class PropertyImageManager extends Component
         }
 
         $this->reset('newImages');
-        $this->dispatch('status', message: 'Photo(s) added.');
+        $this->dispatch('status', message: __('Photo(s) added.'));
     }
 
     public function makePrimary(int $imageId): void
@@ -91,7 +91,7 @@ class PropertyImageManager extends Component
             $next?->update(['is_primary' => true]);
         }
 
-        $this->dispatch('status', message: 'Photo removed.');
+        $this->dispatch('status', message: __('Photo removed.'));
     }
 
     private function ensureAdmin(): void

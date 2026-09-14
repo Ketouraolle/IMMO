@@ -50,7 +50,7 @@ class IssueController extends Controller
 
         Issue::create($data);
 
-        return redirect()->route('issues.index')->with('status', 'Issue reported.');
+        return redirect()->route('issues.index')->with('status', __('Issue reported.'));
     }
 
     public function show(Request $request, Issue $issue)
@@ -74,7 +74,7 @@ class IssueController extends Controller
 
         $issue->update($data);
 
-        return back()->with('status', 'Issue updated.');
+        return back()->with('status', __('Issue updated.'));
     }
 
     private function authorizeView(Request $request, Issue $issue): void

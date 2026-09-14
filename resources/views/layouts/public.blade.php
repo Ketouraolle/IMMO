@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'EstateHub — Find your next home')</title>
+    <title>@yield('title', __('EstateHub — Find your next home'))</title>
+    @include('partials.theme-init')
     {{-- Reveal-on-scroll only hides content once JS is known to run --}}
     <script>document.documentElement.classList.add('js-reveal');</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,7 +22,11 @@
         <a class="site-brand" href="{{ route('public.properties.index') }}">
             <span class="site-brand__mark"><i class="bi bi-house-door-fill"></i></span> EstateHub
         </a>
-        <a href="{{ route('login') }}" class="site-header__link">Log in</a>
+        <div class="site-header__actions">
+            @include('partials.locale-switch')
+            @include('partials.theme-toggle', ['class' => 'site-icon-btn'])
+            <a href="{{ route('login') }}" class="site-header__link">{{ __('Log in') }}</a>
+        </div>
     </div>
 </header>
 
@@ -29,7 +34,7 @@
     @if(session('status'))
         <div class="alert alert-success alert-dismissible fade show">
             {{ session('status') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ __('Close') }}"></button>
         </div>
     @endif
     @yield('content')
@@ -37,7 +42,7 @@
 
 <footer class="site-footer">
     <div class="container site-footer__inner">
-        <span>&copy; {{ date('Y') }} EstateHub · Rentals managed in Cameroon</span>
+        <span>&copy; {{ date('Y') }} EstateHub · {{ __('Rentals managed in Cameroon') }}</span>
         <span class="d-flex flex-wrap gap-3">
             <a href="tel:+237600000000"><i class="bi bi-telephone me-1"></i>+237 6 00 00 00 00</a>
             <a href="mailto:contact@diasporaimmo.test"><i class="bi bi-envelope me-1"></i>contact@diasporaimmo.test</a>

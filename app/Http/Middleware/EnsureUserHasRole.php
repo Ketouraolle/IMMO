@@ -16,7 +16,7 @@ class EnsureUserHasRole
         $allowed = explode(',', $roles);
 
         if (! $request->user() || ! in_array($request->user()->role, $allowed, true)) {
-            abort(403, "You don't have access to this section.");
+            abort(403, __("You don't have access to this section."));
         }
 
         return $next($request);

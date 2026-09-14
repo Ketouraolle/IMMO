@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Contract '.$contract->reference)
+@section('title', __('Contract :reference', ['reference' => $contract->reference]))
 @section('content')
     @php
         $lease = $contract->lease;
@@ -11,23 +11,23 @@
     <div class="page-head d-print-none">
         <div>
             @if($user->isAdmin())
-                <a href="{{ route('properties.show', $lease->property) }}" class="small text-muted text-decoration-none"><i class="bi bi-arrow-left"></i> {{ $lease->property->name }}</a>
+                <a href="{{ route('properties.show', $lease->property) }}" class="back-to"><i class="bi bi-arrow-left"></i> {{ $lease->property->name }}</a>
             @endif
-            <h3 class="mt-1">Lease contract</h3>
+            <h3 class="mt-1">{{ __('Lease contract') }}</h3>
             <p class="page-head__sub">{{ $lease->property->name }} · {{ $lease->tenant->name }} · <span class="badge-soft badge-soft--{{ $tone }}">{{ $contract->statusLabel() }}</span></p>
         </div>
         <div class="d-flex gap-2 flex-wrap">
             @if($user->isAdmin() && ! $contract->isSigned())
-                <a href="{{ route('contracts.create', $lease) }}" class="btn btn-outline-dark btn-sm"><i class="bi bi-pencil"></i> Edit</a>
+                <a href="{{ route('contracts.create', $lease) }}" class="btn btn-outline-dark btn-sm"><i class="bi bi-pencil"></i> {{ __('Edit') }}</a>
                 @if($contract->isDraft())
                     <form method="POST" action="{{ route('contracts.send', $contract) }}">
                         @csrf
-                        <button class="btn btn-dark btn-sm"><i class="bi bi-send"></i> Send to tenant</button>
+                        <button class="btn btn-dark btn-sm"><i class="bi bi-send"></i> {{ __('Send to tenant') }}</button>
                     </form>
                 @endif
             @endif
             @if($contract->isSigned())
-                <button type="button" onclick="window.print()" class="btn btn-outline-dark btn-sm"><i class="bi bi-printer"></i> Print / Save as PDF</button>
+                <button type="button" onclick="window.print()" class="btn btn-outline-dark btn-sm"><i class="bi bi-printer"></i> {{ __('Print / Save as PDF') }}</button>
             @endif
         </div>
     </div>
@@ -36,36 +36,36 @@
         <div class="col-xl-9">
             @if($canSign)
                 <div class="alert alert-info d-flex gap-2 align-items-center d-print-none">
-                    <i class="bi bi-info-circle"></i> Read the contract carefully, then sign at the bottom of the page.
+                    <i class="bi bi-info-circle"></i> {{ __('Read the contract carefully, then sign at the bottom of the page.') }}
                 </div>
             @elseif($user->isAdmin() && $contract->isSent())
                 <div class="alert alert-warning d-flex gap-2 align-items-center d-print-none">
-                    <i class="bi bi-hourglass-split"></i> Sent {{ $contract->sent_at->diffForHumans() }}, waiting for {{ $lease->tenant->name }} to sign.
+                    <i class="bi bi-hourglass-split"></i> {{ __('Sent :time, waiting for :name to sign.', ['time' => $contract->sent_at->diffForHumans(), 'name' => $lease->tenant->name]) }}
                 </div>
             @endif
 
-            <div class="card mb-4">
+            <div class="card paper mb-4" data-bs-theme="light">
                 <div class="contract-doc">
                     {!! $document !!}
 
                     @if($contract->isSigned())
-                        <h2>Signatures</h2>
+                        <h2>{{ __('Signatures') }}</h2>
                         <div class="row g-4">
                             <div class="col-sm-6">
-                                <div class="small text-muted">Tenant</div>
-                                <img src="{{ $contract->signature_data }}" class="signature-img d-block my-2" alt="Signature of {{ $lease->tenant->name }}">
+                                <div class="small text-muted">{{ __('Tenant') }}</div>
+                                <img src="{{ $contract->signature_data }}" class="signature-img d-block my-2" alt="{{ __('Signature of :name', ['name' => $lease->tenant->name]) }}">
                                 <div class="fw-semibold">{{ $lease->tenant->name }}</div>
-                                <div class="small text-muted">Signed electronically on {{ $contract->signed_at->format('d F Y \a\t H:i') }}</div>
+                                <div class="small text-muted">{{ __('Signed electronically on :date', ['date' => $contract->signed_at->translatedFormat('j F Y, H:i')]) }}</div>
                             </div>
                             <div class="col-sm-6">
-                                <div class="small text-muted">For the landlord</div>
+                                <div class="small text-muted">{{ __('For the landlord') }}</div>
                                 <div class="fw-semibold mt-2">EstateHub</div>
-                                <div class="small text-muted">Issued by {{ $contract->creator?->name ?? 'EstateHub' }} on {{ $contract->sent_at->format('d F Y') }}</div>
+                                <div class="small text-muted">{{ __('Issued by :name on :date', ['name' => $contract->creator?->name ?? 'EstateHub', 'date' => $contract->sent_at->translatedFormat('j F Y')]) }}</div>
                             </div>
                         </div>
                         <div class="mt-4 pt-3 border-top text-muted" style="font-size: .74rem; line-height: 1.6;">
-                            Audit trail · Ref. {{ $contract->reference }} · Signed {{ $contract->signed_at->toIso8601String() }} from IP {{ $contract->signer_ip }}
-                            · Document fingerprint (SHA-256) <span class="font-monospace">{{ substr($contract->body_hash, 0, 16) }}…</span>
+                            {{ __('Audit trail') }} · {{ __('Ref.') }} {{ $contract->reference }} · {{ __('Signed :time from IP :ip', ['time' => $contract->signed_at->toIso8601String(), 'ip' => $contract->signer_ip]) }}
+                            · {{ __('Document fingerprint (SHA-256)') }} <span class="font-monospace">{{ substr($contract->body_hash, 0, 16) }}…</span>
                         </div>
                     @endif
                 </div>
@@ -74,21 +74,21 @@
             @if($canSign)
                 <div class="card d-print-none" id="sign">
                     <div class="card-body p-4">
-                        <h5 class="mb-1">Sign this contract</h5>
-                        <p class="text-muted small mb-4">Your signature is tied to this exact version of the document.</p>
+                        <h5 class="mb-1">{{ __('Sign this contract') }}</h5>
+                        <p class="text-muted small mb-4">{{ __('Your signature is tied to this exact version of the document.') }}</p>
 
                         <form method="POST" action="{{ route('contracts.sign', $contract) }}" x-data="{ agreed: false, signing: false }" @submit="signing = true">
                             @csrf
                             <div x-data="signaturePad">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <label class="form-label mb-0">Draw your signature</label>
+                                    <label class="form-label mb-0">{{ __('Draw your signature') }}</label>
                                     <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" @click="clear()" x-show="hasInk" x-cloak>
-                                        <i class="bi bi-arrow-counterclockwise"></i> Clear
+                                        <i class="bi bi-arrow-counterclockwise"></i> {{ __('Clear') }}
                                     </button>
                                 </div>
                                 <div class="signature-pad">
                                     <div class="signature-pad__line"></div>
-                                    <div class="signature-pad__hint" x-show="!hasInk">Sign here with your mouse, finger or stylus</div>
+                                    <div class="signature-pad__hint" x-show="!hasInk">{{ __('Sign here with your mouse, finger or stylus') }}</div>
                                     <canvas x-ref="canvas" @pointerdown.prevent="down($event)" @pointermove="move($event)" @pointerup="up()" @pointercancel="up()"></canvas>
                                 </div>
                                 <input type="hidden" name="signature" x-ref="output">
@@ -96,13 +96,13 @@
 
                                 <div class="form-check mt-3">
                                     <input class="form-check-input" type="checkbox" name="agree" value="1" id="agree" x-model="agreed">
-                                    <label class="form-check-label" for="agree">I, {{ $lease->tenant->name }}, have read and agree to the terms of this contract.</label>
+                                    <label class="form-check-label" for="agree">{{ __('I, :name, have read and agree to the terms of this contract.', ['name' => $lease->tenant->name]) }}</label>
                                 </div>
                                 @error('agree') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
 
                                 <button class="btn btn-dark w-100 py-2 mt-4" :disabled="!agreed || !hasInk || signing">
-                                    <span x-show="!signing"><i class="bi bi-pen me-1"></i> Sign contract</span>
-                                    <span x-show="signing" x-cloak><span class="spinner-border spinner-border-sm me-1"></span> Signing…</span>
+                                    <span x-show="!signing"><i class="bi bi-pen me-1"></i> {{ __('Sign contract') }}</span>
+                                    <span x-show="signing" x-cloak><span class="spinner-border spinner-border-sm me-1"></span> {{ __('Signing…') }}</span>
                                 </button>
                             </div>
                         </form>
