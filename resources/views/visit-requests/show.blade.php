@@ -47,6 +47,9 @@
                             @if($vr->visit_date)
                                 <div class="fs-5 fw-bold">{{ $vr->visit_date->format('l d F Y') }}</div>
                                 <div class="text-muted">at {{ $vr->visitTimeLabel() }}</div>
+                                @unless($vr->visit_slot_id)
+                                    <div class="small text-muted mt-1"><i class="bi bi-info-circle"></i> Proposed by the visitor (no visit dates were published)</div>
+                                @endunless
                             @else
                                 <div class="fs-5 fw-bold">Not scheduled</div>
                                 <div class="text-muted small">Older request made before online booking.</div>

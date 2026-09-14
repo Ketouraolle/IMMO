@@ -1,27 +1,28 @@
-<div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <span>Book a visit</span>
-        @if($fee > 0)
-            <span class="badge-soft badge-soft--info">Visit fee · {{ number_format($fee) }} XAF</span>
-        @else
-            <span class="badge-soft badge-soft--success">Free visit</span>
-        @endif
-    </div>
-    <div class="card-body">
+<div class="card booking-card">
+    <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="booking-card__title">Book a visit</h2>
+            @if($fee > 0)
+                <span class="badge-soft badge-soft--info">Fee · {{ number_format($fee) }} XAF</span>
+            @else
+                <span class="badge-soft badge-soft--success">Free visit</span>
+            @endif
+        </div>
+
         @if($booking)
             {{-- Confirmation --}}
-            <div class="text-center py-2">
+            <div class="text-center mb-3">
                 <div class="pay-success mt-0 mb-2"><i class="bi bi-check-lg"></i></div>
-                <h5 class="mb-1">Visit requested</h5>
-                <p class="text-muted small mb-3">The agency will confirm by phone or email.</p>
+                <h3 class="booking-card__title">Visit requested</h3>
+                <p class="text-muted small mb-0">The agency will confirm by phone or email.</p>
             </div>
-            <div class="passport mb-3">
-                <div class="passport__row"><span class="passport__label">Date</span><span class="passport__value">{{ $booking->visit_date->format('l d F') }}</span></div>
-                <div class="passport__row"><span class="passport__label">Time</span><span class="passport__value">{{ $booking->visitTimeLabel() }}</span></div>
-                <div class="passport__row"><span class="passport__label">Reference</span><span class="passport__value">VR-{{ str_pad($booking->id, 5, '0', STR_PAD_LEFT) }}</span></div>
-                <div class="passport__row">
-                    <span class="passport__label">Visit fee</span>
-                    <span class="passport__value text-end">
+            <dl class="summary-list mb-3">
+                <div><dt>Date</dt><dd>{{ $booking->visit_date->format('l d F') }}</dd></div>
+                <div><dt>Time</dt><dd>{{ $booking->visitTimeLabel() }}</dd></div>
+                <div><dt>Reference</dt><dd>VR-{{ str_pad($booking->id, 5, '0', STR_PAD_LEFT) }}</dd></div>
+                <div>
+                    <dt>Visit fee</dt>
+                    <dd>
                         @if($booking->payment_status === 'paid')
                             Paid via {{ $booking->paymentMethodLabel() }}
                             <span class="d-block text-muted small fw-normal">{{ $booking->transaction_ref }}</span>
@@ -30,56 +31,64 @@
                         @else
                             Free
                         @endif
-                    </span>
+                    </dd>
                 </div>
-            </div>
+            </dl>
             <button type="button" class="btn btn-outline-dark w-100" wire:click="startOver">Book another time</button>
-
-        @elseif($slots->isEmpty())
-            {{-- No availability --}}
-            <div class="text-center py-3">
-                <i class="bi bi-calendar-x fs-2 text-muted"></i>
-                <div class="fw-semibold mt-2">No visit dates open yet</div>
-                <p class="text-muted small mb-3">Call or email the agency and we'll arrange a time with you.</p>
-                <div class="d-grid gap-2">
-                    <a href="tel:+237600000000" class="btn btn-outline-dark btn-sm"><i class="bi bi-telephone me-1"></i> +237 6 00 00 00 00</a>
-                    <a href="mailto:contact@diasporaimmo.test" class="btn btn-outline-dark btn-sm"><i class="bi bi-envelope me-1"></i> contact@diasporaimmo.test</a>
-                </div>
-            </div>
 
         @else
             @error('form') <div class="alert alert-warning py-2 small">{{ $message }}</div> @enderror
 
-            {{-- 1. Date --}}
-            <div class="step-label"><span class="step-label__num">1</span> Pick a date</div>
-            <div class="chip-group mb-1">
-                @foreach($slots as $s)
-                    <button type="button" wire:key="slot-{{ $s->id }}" wire:click="selectSlot({{ $s->id }})"
-                            class="chip {{ $slotId === $s->id ? 'is-selected' : '' }}">
-                        {{ $s->date->format('D d M') }}
-                        <small>{{ $s->windowLabel() }}</small>
-                    </button>
-                @endforeach
-            </div>
-            @error('slotId') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
-
-            {{-- 2. Time --}}
-            @if($slot)
-                <div class="step-label mt-4"><span class="step-label__num">2</span> Pick a time</div>
+            @if($slots->isNotEmpty())
+                {{-- Published dates: pick one, then a time inside its window --}}
+                <div class="step-label"><span class="step-label__num">1</span> Pick a date</div>
                 <div class="chip-group mb-1">
-                    @foreach($times as $t)
-                        <button type="button" wire:key="time-{{ $slot->id }}-{{ $t }}" wire:click="selectTime('{{ $t }}')"
-                                class="chip {{ $time === $t ? 'is-selected' : '' }}" @disabled(in_array($t, $unavailable, true))>
-                            {{ $t }}
+                    @foreach($slots as $s)
+                        <button type="button" wire:key="slot-{{ $s->id }}" wire:click="selectSlot({{ $s->id }})"
+                                class="chip {{ $slotId === $s->id ? 'is-selected' : '' }}">
+                            {{ $s->date->format('D d M') }}
+                            <small>{{ $s->windowLabel() }}</small>
                         </button>
                     @endforeach
                 </div>
+                @error('slotId') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+
+                @if($slot)
+                    <div class="step-label mt-4"><span class="step-label__num">2</span> Pick a time</div>
+                    <div class="chip-group mb-1">
+                        @foreach($times as $t)
+                            <button type="button" wire:key="time-{{ $slot->id }}-{{ $t }}" wire:click="selectTime('{{ $t }}')"
+                                    class="chip {{ $time === $t ? 'is-selected' : '' }}" @disabled(in_array($t, $unavailable, true))>
+                                {{ $t }}
+                            </button>
+                        @endforeach
+                    </div>
+                    @error('time') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                @endif
+
+                @php $ready = $slot && $time; $step = 3; @endphp
+            @else
+                {{-- No published dates: the visitor proposes a day and time --}}
+                <div class="step-label"><span class="step-label__num">1</span> Pick a day and time</div>
+                <p class="text-muted small mb-2">Choose what suits you. The agency will confirm the visit.</p>
+                <div class="row g-2">
+                    <div class="col-7">
+                        <input type="date" wire:model.live="date" min="{{ today()->toDateString() }}" aria-label="Visit day"
+                               class="form-control @error('date') is-invalid @enderror">
+                    </div>
+                    <div class="col-5">
+                        <input type="time" wire:model.live.debounce.500ms="time" step="1800" aria-label="Visit time"
+                               class="form-control @error('time') is-invalid @enderror">
+                    </div>
+                </div>
+                @error('date') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
                 @error('time') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+
+                @php $ready = $date && $time; $step = 2; @endphp
             @endif
 
-            {{-- 3. Details + 4. Payment --}}
-            @if($slot && $time)
-                <div class="step-label mt-4"><span class="step-label__num">3</span> Your details</div>
+            @if($ready)
+                <div class="step-label mt-4"><span class="step-label__num">{{ $step }}</span> Your details</div>
                 <div class="mb-2">
                     <input type="text" wire:model="name" class="form-control @error('name') is-invalid @enderror" placeholder="Full name" autocomplete="name">
                     @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
@@ -97,7 +106,7 @@
                 <textarea wire:model="message" class="form-control" rows="2" placeholder="Message (optional)"></textarea>
 
                 @if($fee > 0)
-                    <div class="step-label mt-4"><span class="step-label__num">4</span> Visit fee · {{ number_format($fee) }} XAF</div>
+                    <div class="step-label mt-4"><span class="step-label__num">{{ $step + 1 }}</span> Visit fee · {{ number_format($fee) }} XAF</div>
                     <div class="choice-grid mb-3">
                         <button type="button" class="choice-card {{ $paymentOption === 'pay_now' ? 'is-selected' : '' }}" wire:click="$set('paymentOption', 'pay_now')">
                             <i class="bi bi-phone fs-5 text-muted"></i>

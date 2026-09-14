@@ -46,6 +46,17 @@ class VisitSlot extends Model
         return $times;
     }
 
+    /** Times a visitor can still book: in the window, not taken, not already past. */
+    public function availableTimes(): array
+    {
+        $booked = $this->bookedTimes();
+
+        return array_values(array_filter(
+            $this->timeOptions(),
+            fn ($t) => ! in_array($t, $booked, true) && ! $this->isTimeInPast($t),
+        ));
+    }
+
     public function isTimeInPast(string $time): bool
     {
         return $this->date->copy()->setTimeFromTimeString($time)->isPast();

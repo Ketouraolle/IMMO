@@ -165,4 +165,109 @@ class VisitBookingTest extends TestCase
             ->assertSee('Book a visit')
             ->assertSee('Pick a date');
     }
+
+    private function propertyWithoutSlots(float $fee = 5000): Property
+    {
+        [$property, $slot] = $this->propertyWithSlot($fee);
+        $slot->delete();
+
+        return $property;
+    }
+
+    public function test_visitor_picks_any_day_and_time_when_no_dates_are_published(): void
+    {
+        Notification::fake();
+        $admin = User::factory()->create(['role' => 'admin']);
+        $property = $this->propertyWithoutSlots();
+        $day = today()->addDays(4)->toDateString();
+
+        Livewire::test(VisitBooking::class, ['property' => $property])
+            ->set('date', $day)
+            ->set('time', '14:15')
+            ->set('name', 'Jean Ondoa')
+            ->set('email', 'jean@example.com')
+            ->set('phone', '+237 699 88 77 66')
+            ->set('paymentOption', 'pay_at_visit')
+            ->call('book')
+            ->assertHasNoErrors();
+
+        $visit = VisitRequest::sole();
+        $this->assertNull($visit->visit_slot_id);
+        $this->assertSame($day, $visit->visit_date->toDateString());
+        $this->assertSame('14:15', $visit->visitTimeLabel());
+        Notification::assertSentTo($admin, VisitRequested::class);
+    }
+
+    public function test_open_booking_rejects_past_and_already_taken_times(): void
+    {
+        $property = $this->propertyWithoutSlots(fee: 0);
+        $day = today()->addDays(2)->toDateString();
+
+        VisitRequest::create([
+            'property_id' => $property->id, 'name' => 'First visitor', 'email' => 'first@example.com', 'phone' => '699000000',
+            'status' => 'new', 'visit_date' => $day, 'visit_time' => '10:00',
+        ]);
+
+        $component = Livewire::test(VisitBooking::class, ['property' => $property])
+            ->set('name', 'Jean Ondoa')
+            ->set('email', 'jean@example.com')
+            ->set('phone', '699887766');
+
+        $component->set('date', today()->subDay()->toDateString())->set('time', '10:00')->call('book')->assertHasErrors('date');
+        $component->set('date', $day)->set('time', '10:00')->call('book')->assertHasErrors('time');
+        $component->set('time', '10:30')->call('book')->assertHasNoErrors();
+
+        $this->assertSame(2, VisitRequest::count());
+    }
+
+    public function test_published_dates_must_be_used_when_they_exist(): void
+    {
+        [$property] = $this->propertyWithSlot();
+
+        Livewire::test(VisitBooking::class, ['property' => $property])
+            ->set('date', today()->addDays(5)->toDateString())
+            ->set('time', '10:00')
+            ->set('name', 'Jean Ondoa')
+            ->set('email', 'jean@example.com')
+            ->set('phone', '699887766')
+            ->set('paymentOption', 'pay_at_visit')
+            ->call('book')
+            ->assertHasErrors('slotId');
+
+        $this->assertSame(0, VisitRequest::count());
+    }
+
+    public function test_falls_back_to_free_choice_when_published_dates_are_fully_booked(): void
+    {
+        Notification::fake();
+        [$property, $slot] = $this->propertyWithSlot(fee: 0);
+        $slot->update(['start_time' => '09:00', 'end_time' => '09:30']); // a single bookable time
+
+        VisitRequest::create([
+            'property_id' => $property->id, 'visit_slot_id' => $slot->id, 'name' => 'First visitor', 'email' => 'first@example.com',
+            'phone' => '699000000', 'status' => 'new', 'visit_date' => $slot->date, 'visit_time' => '09:00',
+        ]);
+
+        $this->get(route('public.properties.show', $property))->assertOk()->assertSee('Pick a day and time');
+
+        Livewire::test(VisitBooking::class, ['property' => $property])
+            ->set('date', today()->addDays(6)->toDateString())
+            ->set('time', '16:00')
+            ->set('name', 'Jean Ondoa')
+            ->set('email', 'jean@example.com')
+            ->set('phone', '699887766')
+            ->call('book')
+            ->assertHasNoErrors();
+
+        $this->assertNull(VisitRequest::latest('id')->first()->visit_slot_id);
+    }
+
+    public function test_listing_without_published_dates_offers_free_choice(): void
+    {
+        $property = $this->propertyWithoutSlots();
+
+        $this->get(route('public.properties.show', $property))
+            ->assertOk()
+            ->assertSee('Pick a day and time');
+    }
 }

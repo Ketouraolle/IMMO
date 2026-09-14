@@ -8,18 +8,23 @@ use App\Models\VisitRequest;
 use App\Models\VisitSlot;
 use App\Notifications\VisitRequested;
 use App\Services\MobileMoneySimulator;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 
-// Public visit booking on a listing: pick an admin-opened date, a time in its window, then pay now or at the visit.
+/**
+ * Public visit booking on a listing. When the admin has published visit dates the visitor picks one
+ * and a time inside its window; otherwise they propose any day and time. Then pay now or at the visit.
+ */
 class VisitBooking extends Component
 {
     public Property $property;
 
-    public ?int $slotId = null;
-    public ?string $time = null;
+    public ?int $slotId = null;   // published-dates mode
+    public ?string $date = null;  // open mode: day proposed by the visitor (Y-m-d)
+    public ?string $time = null;  // H:i, used by both modes
 
     public string $name = '';
     public string $email = '';
@@ -45,6 +50,16 @@ class VisitBooking extends Component
         $this->resetErrorBag('time');
     }
 
+    public function updatedDate(): void
+    {
+        $this->resetErrorBag(['date', 'time']);
+    }
+
+    public function updatedTime(): void
+    {
+        $this->resetErrorBag('time');
+    }
+
     /** Validates everything except payment. Called by the payment widget before it starts the operator prompt. */
     public function validateDetails(): bool
     {
@@ -56,20 +71,7 @@ class VisitBooking extends Component
             'paymentOption' => ['required', Rule::in(['pay_now', 'pay_at_visit'])],
         ]);
 
-        $slot = $this->slot();
-        if (! $slot) {
-            $this->addError('slotId', 'Pick one of the available dates.');
-            return false;
-        }
-
-        if (! in_array($this->time, $slot->timeOptions(), true)
-            || in_array($this->time, $slot->bookedTimes(), true)
-            || $slot->isTimeInPast($this->time)) {
-            $this->addError('time', 'That time is no longer available. Please pick another.');
-            return false;
-        }
-
-        return true;
+        return $this->hasPublishedDates() ? $this->validateSlotChoice() : $this->validateOpenChoice();
     }
 
     public function book(): void
@@ -94,17 +96,17 @@ class VisitBooking extends Component
             ]);
         }
 
-        $slot = $this->slot();
+        $slot = $this->hasPublishedDates() ? $this->slot() : null;
 
         $visit = VisitRequest::create([
             'property_id' => $this->property->id,
-            'visit_slot_id' => $slot->id,
+            'visit_slot_id' => $slot?->id,
             'name' => $this->name,
             'email' => $this->email,
             'phone' => $this->phone,
             'message' => $this->message ?: null,
             'status' => 'new',
-            'visit_date' => $slot->date,
+            'visit_date' => $slot?->date ?? $this->date,
             'visit_time' => $this->time,
             'fee_amount' => $fee,
             'payment_option' => $fee > 0 ? $this->paymentOption : null,
@@ -123,7 +125,7 @@ class VisitBooking extends Component
 
     public function startOver(): void
     {
-        $this->reset('slotId', 'time', 'message', 'payMethod', 'payPhone', 'bookedId');
+        $this->reset('slotId', 'date', 'time', 'message', 'payMethod', 'payPhone', 'bookedId');
         $this->paymentOption = 'pay_now';
     }
 
@@ -133,26 +135,87 @@ class VisitBooking extends Component
             'payMethod' => 'operator',
             'payPhone' => 'mobile money number',
             'paymentOption' => 'payment option',
+            'date' => 'day',
         ];
+    }
+
+    private function validateSlotChoice(): bool
+    {
+        $slot = $this->slot();
+        if (! $slot) {
+            $this->addError('slotId', 'Pick one of the available dates.');
+            return false;
+        }
+
+        if (! in_array($this->time, $slot->timeOptions(), true)
+            || in_array($this->time, $slot->bookedTimes(), true)
+            || $slot->isTimeInPast($this->time)) {
+            $this->addError('time', 'That time is no longer available. Please pick another.');
+            return false;
+        }
+
+        return true;
+    }
+
+    private function validateOpenChoice(): bool
+    {
+        $this->validate([
+            'date' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
+            'time' => ['required', 'date_format:H:i'],
+        ], [
+            'date.required' => 'Pick a day for your visit.',
+            'date.after_or_equal' => 'Pick today or a later day.',
+            'time.required' => 'Pick a time for your visit.',
+        ]);
+
+        if (Carbon::parse("{$this->date} {$this->time}")->isPast()) {
+            $this->addError('time', 'That time has already passed. Please pick a later time.');
+            return false;
+        }
+
+        $taken = VisitRequest::where('property_id', $this->property->id)
+            ->whereDate('visit_date', $this->date)
+            ->where('visit_time', $this->time)
+            ->where('status', '!=', 'cancelled')
+            ->exists();
+
+        if ($taken) {
+            $this->addError('time', 'Someone already booked that time. Please pick another.');
+            return false;
+        }
+
+        return true;
+    }
+
+    /** Published dates that still have at least one free time; fully booked or elapsed dates are hidden. */
+    private function bookableSlots(): \Illuminate\Support\Collection
+    {
+        return $this->property->upcomingVisitSlots()->get()
+            ->filter(fn (VisitSlot $slot) => $slot->availableTimes() !== [])
+            ->values();
+    }
+
+    // With nothing bookable left, the visitor falls back to proposing any day and time
+    private function hasPublishedDates(): bool
+    {
+        return $this->bookableSlots()->isNotEmpty();
     }
 
     private function slot(): ?VisitSlot
     {
-        return $this->slotId ? $this->property->upcomingVisitSlots()->find($this->slotId) : null;
+        return $this->slotId ? $this->bookableSlots()->firstWhere('id', $this->slotId) : null;
     }
 
     public function render()
     {
-        $slots = $this->property->upcomingVisitSlots()->get();
+        $slots = $this->bookableSlots();
         $slot = $slots->firstWhere('id', $this->slotId);
 
         return view('livewire.visit-booking', [
             'slots' => $slots,
             'slot' => $slot,
             'times' => $slot?->timeOptions() ?? [],
-            'unavailable' => $slot
-                ? collect($slot->timeOptions())->filter(fn ($t) => $slot->isTimeInPast($t))->merge($slot->bookedTimes())->all()
-                : [],
+            'unavailable' => $slot ? array_values(array_diff($slot->timeOptions(), $slot->availableTimes())) : [],
             'fee' => (float) $this->property->visit_fee,
             'booking' => $this->bookedId ? VisitRequest::find($this->bookedId) : null,
         ]);
