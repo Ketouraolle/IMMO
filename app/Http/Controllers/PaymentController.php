@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Lease;
 use App\Models\Payment;
+use App\Services\MobileMoneySimulator;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class PaymentController extends Controller
 {
@@ -17,6 +19,7 @@ class PaymentController extends Controller
             ->when($user->isTenant(), fn ($q) => $q->whereHas('lease', fn ($l) => $l->where('tenant_id', $user->id)))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))
             ->latest('paid_on')
+            ->latest('id')
             ->paginate(20)
             ->withQueryString();
 
@@ -39,33 +42,30 @@ class PaymentController extends Controller
             'amount' => ['required', 'numeric', 'min:0'],
             'paid_on' => ['required', 'date'],
             'period_covered' => ['nullable', 'string', 'max:100'],
-            'method' => ['required', 'in:cash,bank_transfer,mobile_money,other'],
+            'method' => ['required', Rule::in(array_keys(Payment::METHODS))],
+            'transaction_ref' => ['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string'],
         ]);
 
-        $data['lease_id'] = $lease->id;
-        $data['recorded_by'] = $request->user()->id;
-        $data['status'] = 'approved';
-        $data['receipt_number'] = Payment::generateReceiptNumber();
-
-        $payment = Payment::create($data);
+        $payment = $lease->payments()->create($data + ['status' => 'pending']);
+        $payment->markApproved($request->user());
 
         return redirect()->route('payments.receipt', $payment)->with('status', 'Payment recorded.');
     }
 
-    // Tenant submitting a payment they made — goes in as pending until admin validates it.
+    // Tenant paying rent through the (simulated) Orange Money / MTN MoMo checkout.
     public function submitForm(Request $request)
     {
         $user = $request->user();
         abort_unless($user->isTenant(), 403);
 
-        $lease = $user->leases()->where('status', 'active')->latest()->first();
+        $lease = $user->leases()->with('property')->where('status', 'active')->latest()->first();
         abort_unless($lease, 404, "You don't have an active lease.");
 
         return view('payments.submit', compact('lease'));
     }
 
-    public function submit(Request $request)
+    public function submit(Request $request, MobileMoneySimulator $simulator)
     {
         $user = $request->user();
         abort_unless($user->isTenant(), 403);
@@ -74,20 +74,25 @@ class PaymentController extends Controller
         abort_unless($lease, 404, "You don't have an active lease.");
 
         $data = $request->validate([
-            'amount' => ['required', 'numeric', 'min:0'],
-            'paid_on' => ['required', 'date'],
+            'amount' => ['required', 'numeric', 'min:1'],
             'period_covered' => ['nullable', 'string', 'max:100'],
-            'method' => ['required', 'in:cash,bank_transfer,mobile_money,other'],
-            'notes' => ['nullable', 'string'],
+            'method' => ['required', Rule::in(array_keys(MobileMoneySimulator::OPERATORS))],
+            'phone' => ['required', MobileMoneySimulator::PHONE_RULE],
         ]);
 
-        $data['lease_id'] = $lease->id;
-        $data['submitted_by'] = $user->id;
-        $data['status'] = 'pending';
+        // The operator confirmed the charge, so it counts as proof of payment.
+        $payment = $lease->payments()->create([
+            'submitted_by' => $user->id,
+            'amount' => $data['amount'],
+            'paid_on' => today(),
+            'period_covered' => $data['period_covered'] ?? null,
+            'method' => $data['method'],
+            'transaction_ref' => $simulator->charge($data['method'], $data['phone'], (float) $data['amount']),
+            'status' => 'pending',
+        ]);
+        $payment->markApproved(null);
 
-        Payment::create($data);
-
-        return redirect()->route('payments.index')->with('status', 'Payment submitted — an admin will review and validate it.');
+        return redirect()->route('payments.receipt', $payment)->with('status', 'Payment confirmed — your receipt is ready.');
     }
 
     // Admin validates a tenant-submitted payment: generates the receipt.
@@ -96,11 +101,7 @@ class PaymentController extends Controller
         abort_unless($request->user()->isAdmin(), 403);
         abort_unless($payment->isPending(), 400, 'This payment has already been reviewed.');
 
-        $payment->update([
-            'status' => 'approved',
-            'recorded_by' => $request->user()->id,
-            'receipt_number' => Payment::generateReceiptNumber(),
-        ]);
+        $payment->markApproved($request->user());
 
         return back()->with('status', 'Payment approved and receipt generated.');
     }

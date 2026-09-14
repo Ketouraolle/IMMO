@@ -37,6 +37,11 @@ class Lease extends Model
         return $this->hasMany(Payment::class);
     }
 
+    public function contract()
+    {
+        return $this->hasOne(Contract::class);
+    }
+
     public function totalPaid()
     {
         return $this->payments()->sum('amount');

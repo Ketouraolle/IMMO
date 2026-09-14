@@ -10,13 +10,15 @@ class Property extends Model
     use HasFactory;
 
     protected $fillable = [
-        'owner_id', 'name', 'address', 'city', 'type', 'monthly_rent', 'status', 'notes',
+        'owner_id', 'name', 'address', 'city', 'type', 'monthly_rent', 'visit_fee', 'commission_rate', 'status', 'notes',
     ];
 
     protected function casts(): array
     {
         return [
             'monthly_rent' => 'decimal:2',
+            'visit_fee' => 'decimal:2',
+            'commission_rate' => 'decimal:2',
         ];
     }
 
@@ -32,7 +34,7 @@ class Property extends Model
 
     public function activeLease()
     {
-        return $this->hasOne(Lease::class)->where('status', 'active')->latestOfMany();
+        return $this->hasOne(Lease::class)->where('leases.status', 'active')->latestOfMany();
     }
 
     public function issues()
@@ -43,6 +45,20 @@ class Property extends Model
     public function visitRequests()
     {
         return $this->hasMany(VisitRequest::class);
+    }
+
+    public function visitSlots()
+    {
+        return $this->hasMany(VisitSlot::class);
+    }
+
+    // Dates still open for booking, soonest first
+    public function upcomingVisitSlots()
+    {
+        return $this->visitSlots()
+            ->where('visit_slots.is_active', true)
+            ->whereDate('visit_slots.date', '>=', today())
+            ->orderBy('visit_slots.date');
     }
 
     public function images()

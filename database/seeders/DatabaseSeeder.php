@@ -2,12 +2,15 @@
 
 namespace Database\Seeders;
 
+use App\Models\Contract;
 use App\Models\Issue;
 use App\Models\Lease;
 use App\Models\Payment;
 use App\Models\Property;
 use App\Models\User;
 use App\Models\VisitRequest;
+use App\Notifications\ContractReadyToSign;
+use App\Notifications\VisitRequested;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -65,6 +68,8 @@ class DatabaseSeeder extends Seeder
             'city' => 'Douala',
             'type' => 'apartment',
             'monthly_rent' => 250000,
+            'visit_fee' => 0,
+            'commission_rate' => 10,
             'status' => 'occupied',
         ]);
 
@@ -75,6 +80,8 @@ class DatabaseSeeder extends Seeder
             'city' => 'Yaoundé',
             'type' => 'house',
             'monthly_rent' => 400000,
+            'visit_fee' => 5000,
+            'commission_rate' => 10,
             'status' => 'vacant',
         ]);
 
@@ -85,6 +92,8 @@ class DatabaseSeeder extends Seeder
             'city' => 'Douala',
             'type' => 'studio',
             'monthly_rent' => 120000,
+            'visit_fee' => 0,
+            'commission_rate' => 12,
             'status' => 'occupied',
         ]);
 
@@ -95,8 +104,21 @@ class DatabaseSeeder extends Seeder
             'city' => 'Yaoundé',
             'type' => 'apartment',
             'monthly_rent' => 180000,
+            'visit_fee' => 3000,
+            'commission_rate' => 8,
             'status' => 'vacant',
         ]);
+
+        // --- Visit dates on vacant properties (next 5 days, 09:00–16:00) ---
+        foreach ([$p2, $p4] as $property) {
+            foreach (range(1, 5) as $daysAhead) {
+                $property->visitSlots()->create([
+                    'date' => today()->addDays($daysAhead)->toDateString(),
+                    'start_time' => '09:00',
+                    'end_time' => '16:00',
+                ]);
+            }
+        }
 
         // --- Leases ---
         $lease1 = Lease::create([
@@ -117,32 +139,28 @@ class DatabaseSeeder extends Seeder
             'status' => 'active',
         ]);
 
-        // --- Payments (approved, admin-recorded) ---
+        // --- Payments (approved, admin-recorded; commission applied on approval) ---
         foreach ([2, 1, 0] as $monthsAgo) {
             Payment::create([
                 'lease_id' => $lease1->id,
-                'recorded_by' => $admin->id,
-                'receipt_number' => Payment::generateReceiptNumber(),
                 'amount' => 250000,
                 'paid_on' => now()->subMonths($monthsAgo)->startOfMonth()->addDays(2),
                 'period_covered' => now()->subMonths($monthsAgo)->format('F Y'),
-                'method' => 'mobile_money',
-                'status' => 'approved',
-            ]);
+                'method' => 'orange_money',
+                'status' => 'pending',
+            ])->markApproved($admin);
         }
 
         Payment::create([
             'lease_id' => $lease2->id,
-            'recorded_by' => $admin->id,
-            'receipt_number' => Payment::generateReceiptNumber(),
             'amount' => 120000,
             'paid_on' => now()->subMonth()->startOfMonth()->addDays(1),
             'period_covered' => now()->subMonth()->format('F Y'),
             'method' => 'bank_transfer',
-            'status' => 'approved',
-        ]);
+            'status' => 'pending',
+        ])->markApproved($admin);
 
-        // --- Payment awaiting admin validation (tenant-submitted) ---
+        // --- Payment awaiting admin validation (tenant-submitted before mobile money checkout) ---
         Payment::create([
             'lease_id' => $lease2->id,
             'submitted_by' => $tenant2->id,
@@ -153,6 +171,18 @@ class DatabaseSeeder extends Seeder
             'status' => 'pending',
             'notes' => 'Paid via MoMo, ref 998211',
         ]);
+
+        // --- Contract sent to Brice, ready to sign ---
+        $contract = Contract::create([
+            'lease_id' => $lease1->id,
+            'reference' => Contract::generateReference($lease1),
+            'status' => 'draft',
+            'created_by' => $admin->id,
+            'special_conditions' => "Security deposit of two months' rent (500,000 XAF), refundable at the end of the lease.\nWater and electricity bills are paid by the tenant.",
+        ]);
+        $body = $contract->render();
+        $contract->update(['body' => $body, 'body_hash' => hash('sha256', $body), 'status' => 'sent', 'sent_at' => now()]);
+        $tenant1->notify(new ContractReadyToSign($contract));
 
         // --- Issues ---
         Issue::create([
@@ -174,22 +204,45 @@ class DatabaseSeeder extends Seeder
             'status' => 'in_progress',
         ]);
 
-        // --- Visit requests (public leads) ---
-        VisitRequest::create([
-            'property_id' => $p2->id,
-            'name' => 'Jean Ondoa',
-            'email' => 'jean.ondoa@example.com',
-            'phone' => '+237 6 99 88 77 66',
-            'message' => 'Intéressé par une visite ce week-end.',
-            'status' => 'new',
-        ]);
+        // --- Visit requests (booked from the public listings) ---
+        $slotP2 = $p2->visitSlots()->orderBy('date')->first();
+        $slotP4 = $p4->visitSlots()->orderBy('date')->skip(1)->first();
 
-        VisitRequest::create([
-            'property_id' => $p4->id,
-            'name' => 'Carine Belinga',
-            'email' => 'carine.belinga@example.com',
-            'phone' => '+237 6 22 33 44 55',
-            'status' => 'new',
-        ]);
+        $visits = [
+            VisitRequest::create([
+                'property_id' => $p2->id,
+                'visit_slot_id' => $slotP2->id,
+                'name' => 'Jean Ondoa',
+                'email' => 'jean.ondoa@example.com',
+                'phone' => '+237 6 99 88 77 66',
+                'message' => 'Intéressé par une visite ce week-end.',
+                'status' => 'new',
+                'visit_date' => $slotP2->date,
+                'visit_time' => '10:00',
+                'fee_amount' => 5000,
+                'payment_option' => 'pay_at_visit',
+                'payment_status' => 'unpaid',
+            ]),
+            VisitRequest::create([
+                'property_id' => $p4->id,
+                'visit_slot_id' => $slotP4->id,
+                'name' => 'Carine Belinga',
+                'email' => 'carine.belinga@example.com',
+                'phone' => '+237 6 22 33 44 55',
+                'status' => 'new',
+                'visit_date' => $slotP4->date,
+                'visit_time' => '11:30',
+                'fee_amount' => 3000,
+                'payment_option' => 'pay_now',
+                'payment_status' => 'paid',
+                'payment_method' => 'orange_money',
+                'transaction_ref' => 'OM-7Q2KD9XA',
+                'paid_at' => now(),
+            ]),
+        ];
+
+        foreach ($visits as $visit) {
+            $admin->notify(new VisitRequested($visit));
+        }
     }
 }

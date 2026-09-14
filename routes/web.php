@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\ContractController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\IssueController;
 use App\Http\Controllers\LeaseController;
@@ -12,9 +13,9 @@ use App\Http\Controllers\VisitRequestController;
 use Illuminate\Support\Facades\Route;
 
 // --- Public site (no login required) ---
+// Visit booking happens inside the VisitBooking Livewire component on the listing page.
 Route::get('/', [PublicPropertyController::class, 'index'])->name('public.properties.index');
 Route::get('/browse/{property}', [PublicPropertyController::class, 'show'])->name('public.properties.show');
-Route::post('/browse/{property}/visit-request', [VisitRequestController::class, 'store'])->name('public.visit-requests.store');
 
 // --- Guest / auth ---
 Route::middleware('guest')->group(function () {
@@ -37,12 +38,20 @@ Route::middleware('auth')->group(function () {
     Route::put('/properties/{property}', [PropertyController::class, 'update'])->name('properties.update');
     Route::delete('/properties/{property}', [PropertyController::class, 'destroy'])->name('properties.destroy');
 
-    // Property images are managed by the Livewire PropertyImageManager component (see properties/show.blade.php)
+    // Property images and visit dates are managed by Livewire components on properties/show.blade.php
 
     // Leases — assign / end (admin only, enforced in controller)
     Route::get('/properties/{property}/lease/create', [LeaseController::class, 'create'])->name('leases.create');
     Route::post('/properties/{property}/lease', [LeaseController::class, 'store'])->name('leases.store');
     Route::post('/leases/{lease}/end', [LeaseController::class, 'end'])->name('leases.end');
+
+    // Contracts — admin prepares and sends, tenant reads and signs
+    Route::get('/leases/{lease}/contract', [ContractController::class, 'create'])->name('contracts.create');
+    Route::post('/leases/{lease}/contract', [ContractController::class, 'store'])->name('contracts.store');
+    Route::get('/my-contract', [ContractController::class, 'mine'])->name('contracts.mine');
+    Route::get('/contracts/{contract}', [ContractController::class, 'show'])->name('contracts.show');
+    Route::post('/contracts/{contract}/send', [ContractController::class, 'send'])->name('contracts.send');
+    Route::post('/contracts/{contract}/sign', [ContractController::class, 'sign'])->name('contracts.sign');
 
     // Payments
     Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
@@ -67,6 +76,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
     Route::post('/users/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('users.toggle-active');
 
-    // Visit requests (public creates them; admin manages status)
+    // Visit requests (public books them; admin manages them)
+    Route::get('/visit-requests', [VisitRequestController::class, 'index'])->name('visit-requests.index');
+    Route::get('/visit-requests/{visitRequest}', [VisitRequestController::class, 'show'])->name('visit-requests.show');
     Route::put('/visit-requests/{visitRequest}/status', [VisitRequestController::class, 'updateStatus'])->name('visit-requests.update-status');
+    Route::post('/visit-requests/{visitRequest}/collect-fee', [VisitRequestController::class, 'collectFee'])->name('visit-requests.collect-fee');
 });

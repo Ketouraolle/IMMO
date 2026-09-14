@@ -40,30 +40,8 @@
         </div>
 
         <div class="col-md-5">
-            <div class="card">
-                <div class="card-header">Request a visit</div>
-                <div class="card-body">
-                    <form method="POST" action="{{ route('public.visit-requests.store', $property) }}" onsubmit="const b=this.querySelector('button[type=submit]'); b.disabled=true; b.textContent='Sending request…';">
-                        @csrf
-                        <div class="mb-3">
-                            <label class="form-label">Full name</label>
-                            <input type="text" name="name" value="{{ old('name') }}" class="form-control" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Email</label>
-                            <input type="email" name="email" value="{{ old('email') }}" class="form-control" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Phone</label>
-                            <input type="text" name="phone" value="{{ old('phone') }}" class="form-control" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Message (optional)</label>
-                            <textarea name="message" class="form-control" rows="3">{{ old('message') }}</textarea>
-                        </div>
-                        <button type="submit" class="btn btn-accent w-100">Request a visit</button>
-                    </form>
-                </div>
+            <div class="sticky-md-top" style="top:1rem;">
+                <livewire:visit-booking :property="$property" />
             </div>
         </div>
     </div>

@@ -1,10 +1,16 @@
 @extends('layouts.app')
 @section('title', 'Assign tenant')
 @section('content')
-    <h3 class="mb-4">Assign a tenant to {{ $property->name }}</h3>
+    <div class="page-head">
+        <div>
+            <a href="{{ route('properties.show', $property) }}" class="small text-muted text-decoration-none"><i class="bi bi-arrow-left"></i> {{ $property->name }}</a>
+            <h3 class="mt-1">Assign a tenant</h3>
+            <p class="page-head__sub">Next, you'll review the generated contract and send it for signature.</p>
+        </div>
+    </div>
     <div class="card" style="max-width:560px;">
-        <div class="card-body">
-            <form method="POST" action="{{ route('leases.store', $property) }}" enctype="multipart/form-data">
+        <div class="card-body p-4">
+            <form method="POST" action="{{ route('leases.store', $property) }}">
                 @csrf
                 <div class="mb-3">
                     <label class="form-label">Tenant</label>
@@ -29,7 +35,7 @@
                 <div class="row">
                     <div class="col-6 mb-3">
                         <label class="form-label">Rent amount (XAF)</label>
-                        <input type="number" name="rent_amount" value="{{ old('rent_amount', $property->monthly_rent) }}" class="form-control" required>
+                        <input type="number" name="rent_amount" value="{{ old('rent_amount', (int) $property->monthly_rent) }}" class="form-control" required>
                     </div>
                     <div class="col-6 mb-3">
                         <label class="form-label">Billing cycle</label>
@@ -40,12 +46,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Signed lease contract (PDF, optional)</label>
-                    <input type="file" name="document" accept="application/pdf" class="form-control">
-                    <div class="form-text">Can be added later too — the tenant will see it once uploaded.</div>
-                </div>
-                <button class="btn btn-dark">Assign tenant</button>
+                <button class="btn btn-dark">Assign & prepare contract</button>
                 <a href="{{ route('properties.show', $property) }}" class="btn btn-link">Cancel</a>
             </form>
         </div>

@@ -1,12 +1,15 @@
 @extends('layouts.app')
 @section('title', 'Receipt ' . $payment->receipt_number)
 @section('content')
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="mb-0">Receipt</h3>
-        <button onclick="window.print()" class="btn btn-outline-dark btn-sm d-print-none">Print</button>
+    <div class="page-head d-print-none">
+        <div><h3>Receipt</h3></div>
+        <div class="d-flex gap-2">
+            <a href="{{ route('payments.index') }}" class="btn btn-outline-dark btn-sm">All payments</a>
+            <button onclick="window.print()" class="btn btn-dark btn-sm"><i class="bi bi-printer"></i> Print</button>
+        </div>
     </div>
     <div class="card mx-auto" style="max-width:560px;">
-        <div class="card-body p-4">
+        <div class="card-body p-4 p-sm-5">
             <div class="d-flex justify-content-between mb-4">
                 <div>
                     <div class="fw-bold fs-5">EstateHub</div>
@@ -17,14 +20,19 @@
                     <div class="text-muted small">{{ $payment->paid_on->format('d M Y') }}</div>
                 </div>
             </div>
-            <hr>
-            <table class="table table-borderless mb-0">
-                <tr><td class="text-muted">Tenant</td><td class="text-end">{{ $payment->lease->tenant->name }}</td></tr>
-                <tr><td class="text-muted">Property</td><td class="text-end">{{ $payment->lease->property->name }}</td></tr>
-                <tr><td class="text-muted">Period covered</td><td class="text-end">{{ $payment->period_covered ?? '—' }}</td></tr>
-                <tr><td class="text-muted">Payment method</td><td class="text-end">{{ ucfirst(str_replace('_',' ',$payment->method)) }}</td></tr>
-                <tr><td class="text-muted">Recorded by</td><td class="text-end">{{ $payment->recordedBy->name }}</td></tr>
-                <tr class="border-top"><td class="fw-bold pt-3">Amount paid</td><td class="text-end fw-bold pt-3 fs-5">{{ number_format($payment->amount) }} XAF</td></tr>
+            <div class="text-center py-3 mb-3 rounded-3" style="background:#f0fdf4;">
+                <div class="small text-success fw-semibold"><i class="bi bi-check-circle-fill"></i> Paid</div>
+                <div class="fs-3 fw-bold">{{ number_format($payment->amount) }} XAF</div>
+            </div>
+            <table class="table table-borderless mb-0 small">
+                <tr><td class="text-muted ps-0">Tenant</td><td class="text-end pe-0">{{ $payment->lease->tenant->name }}</td></tr>
+                <tr><td class="text-muted ps-0">Property</td><td class="text-end pe-0">{{ $payment->lease->property->name }}</td></tr>
+                <tr><td class="text-muted ps-0">Period covered</td><td class="text-end pe-0">{{ $payment->period_covered ?? '—' }}</td></tr>
+                <tr><td class="text-muted ps-0">Payment method</td><td class="text-end pe-0">{{ $payment->methodLabel() }}</td></tr>
+                @if($payment->transaction_ref)
+                    <tr><td class="text-muted ps-0">Transaction ref.</td><td class="text-end pe-0 font-monospace">{{ $payment->transaction_ref }}</td></tr>
+                @endif
+                <tr><td class="text-muted ps-0">{{ $payment->recordedBy ? 'Recorded by' : 'Confirmed by' }}</td><td class="text-end pe-0">{{ $payment->recordedBy?->name ?? $payment->methodLabel() }}</td></tr>
             </table>
             @if($payment->notes)
                 <hr><div class="text-muted small">{{ $payment->notes }}</div>

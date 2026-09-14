@@ -29,22 +29,17 @@ class LeaseController extends Controller
             'end_date' => ['nullable', 'date', 'after:start_date'],
             'rent_amount' => ['required', 'numeric', 'min:0'],
             'billing_cycle' => ['required', 'in:monthly,quarterly,yearly'],
-            'document' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
         ]);
-
-        if ($request->hasFile('document')) {
-            $data['document_path'] = $request->file('document')->store('leases', 'public');
-        }
-        unset($data['document']);
 
         $data['property_id'] = $property->id;
         $data['status'] = 'active';
 
-        Lease::create($data);
+        $lease = Lease::create($data);
 
         $property->update(['status' => 'occupied']);
 
-        return redirect()->route('properties.show', $property)->with('status', 'Tenant assigned to property.');
+        // Next step: prepare the contract the tenant will sign
+        return redirect()->route('contracts.create', $lease)->with('status', 'Tenant assigned. Review and send their contract.');
     }
 
     public function end(Request $request, Lease $lease)

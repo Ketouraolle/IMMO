@@ -32,6 +32,12 @@ class User extends Authenticatable
     public function isOwner(): bool { return $this->role === 'owner'; }
     public function isTenant(): bool { return $this->role === 'tenant'; }
 
+    // Recipients for admin notifications
+    public static function activeAdmins()
+    {
+        return static::where('role', 'admin')->where('is_active', true);
+    }
+
     // Properties this user owns (role = owner)
     public function properties()
     {

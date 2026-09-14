@@ -41,6 +41,8 @@ class PropertyController extends Controller
             'city' => ['nullable', 'string', 'max:255'],
             'type' => ['required', 'string', 'max:50'],
             'monthly_rent' => ['required', 'numeric', 'min:0'],
+            'visit_fee' => ['required', 'numeric', 'min:0'],
+            'commission_rate' => ['required', 'numeric', 'min:0', 'max:100'],
             'status' => ['required', 'in:vacant,occupied,maintenance'],
             'notes' => ['nullable', 'string'],
         ]);
@@ -54,7 +56,7 @@ class PropertyController extends Controller
     {
         $this->authorizeView($request, $property);
 
-        $property->load('owner', 'leases.tenant', 'leases.payments', 'issues.reportedBy', 'issues.assignedTo', 'images');
+        $property->load('owner', 'leases.tenant', 'leases.payments', 'leases.contract', 'issues.reportedBy', 'issues.assignedTo', 'images');
         $property->load(['visitRequests' => fn ($q) => $q->latest()]);
 
         return view('properties.show', compact('property'));
@@ -80,6 +82,8 @@ class PropertyController extends Controller
             'city' => ['nullable', 'string', 'max:255'],
             'type' => ['required', 'string', 'max:50'],
             'monthly_rent' => ['required', 'numeric', 'min:0'],
+            'visit_fee' => ['required', 'numeric', 'min:0'],
+            'commission_rate' => ['required', 'numeric', 'min:0', 'max:100'],
             'status' => ['required', 'in:vacant,occupied,maintenance'],
             'notes' => ['nullable', 'string'],
         ]);
